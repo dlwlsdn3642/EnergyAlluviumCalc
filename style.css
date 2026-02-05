@@ -1,0 +1,288 @@
+:root {
+    --bg-color: #121212;
+    --panel-bg: #1e1e1e;
+    --border-color: #333333;
+    --text-color: #a0a0a0;
+    --header-bg: #252525;
+    --header-text: #e0e0e0;
+    --selected-border: #e0e0e0;
+    --selected-bg: #333333;
+    --selected-text: #ffffff;
+}
+
+body {
+    background-color: #000;
+    color: var(--text-color);
+    font-family: 'Noto Sans KR', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+    margin: 0;
+    user-select: none;
+}
+
+.app-layout {
+    width: 100%;
+    max-width: 1220px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 20px;
+}
+
+.container {
+    width: 100%;
+    background-color: var(--bg-color);
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.weapon-sidebar {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    padding: 14px;
+    box-sizing: border-box;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+}
+
+.weapon-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#weapon-clear-btn {
+    border: 1px solid #5a5a5a;
+    background: #262626;
+    color: #f0f0f0;
+    font-size: 0.86rem;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+#weapon-clear-btn:hover {
+    background: #323232;
+}
+
+.weapon-selected-count {
+    font-size: 0.85rem;
+    color: #b7b7b7;
+}
+
+.weapon-list {
+    max-height: 65vh;
+    overflow-y: auto;
+    border: 1px solid #383838;
+    background-color: #1b1b1b;
+    padding: 8px;
+}
+
+.weapon-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 4px;
+    border-bottom: 1px solid #2c2c2c;
+    cursor: pointer;
+    color: #d9d9d9;
+}
+
+.weapon-item:last-child {
+    border-bottom: 0;
+}
+
+.weapon-item input {
+    margin: 0;
+}
+
+.section {
+    margin-bottom: 25px;
+}
+
+.section-header {
+    background-color: var(--header-bg);
+    border: 1px solid var(--border-color);
+    color: var(--header-text);
+    text-align: center;
+    padding: 10px 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 15px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.stat-box {
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    padding: 12px 15px;
+    font-size: 0.95rem;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.stat-box:hover {
+    border-color: #555;
+    background-color: #2a2a2a;
+    color: #fff;
+}
+
+/* 선택된 상태 스타일 */
+.stat-box.selected {
+    border: 1px solid var(--selected-border);
+    background-color: var(--selected-bg);
+    color: var(--selected-text);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+}
+
+.stat-box.selected::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: var(--selected-border);
+}
+
+.action-row {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0 20px;
+}
+
+#calculate-btn {
+    border: 1px solid #6b6b6b;
+    background: #2b2b2b;
+    color: #f2f2f2;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 10px 28px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+#calculate-btn:hover:not(:disabled) {
+    background: #3b3b3b;
+    border-color: #a0a0a0;
+}
+
+#calculate-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.result-section {
+    margin-top: 10px;
+}
+
+.result-content {
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    padding: 16px;
+    line-height: 1.6;
+    color: #d0d0d0;
+}
+
+.result-card {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 16px;
+    align-items: start;
+}
+
+.dungeon-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.dungeon-image {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border: 1px solid #555;
+}
+
+.dungeon-title {
+    color: #f0f0f0;
+    font-weight: 600;
+}
+
+.result-summary p {
+    margin: 0 0 6px;
+}
+
+.matched-options {
+    margin-top: 14px;
+    border-top: 1px solid #3a3a3a;
+    padding-top: 12px;
+}
+
+.matched-title {
+    color: #f0f0f0;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.matched-options ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.matched-options li {
+    border: 1px solid #383838;
+    background-color: #242424;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+}
+
+.option-line {
+    display: block;
+    color: #ffffff;
+}
+
+.weapon-line {
+    display: block;
+    color: #bcbcbc;
+    font-size: 0.92rem;
+}
+
+@media (max-width: 600px) {
+    .grid-container {
+        grid-template-columns: 1fr;
+    }
+
+    .result-card {
+        grid-template-columns: 1fr;
+    }
+
+    .dungeon-box {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 980px) {
+    .app-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .weapon-sidebar {
+        position: static;
+    }
+}

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Stat Selector</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="app-layout">
+        <div class="container">
+
+        <!-- 1. 기초 속성 (그룹: basic) -->
+        <div class="section">
+            <div class="section-header">[ 기초 속성 ]</div>
+            <div class="grid-container">
+                <div class="stat-box" data-group="basic">민첩 증가</div>
+                <div class="stat-box" data-group="basic">힘 증가</div>
+                <div class="stat-box" data-group="basic">의지 증가</div>
+                <div class="stat-box" data-group="basic">지능 증가</div>
+                <div class="stat-box" data-group="basic">주요 능력치 증가</div>
+            </div>
+        </div>
+
+        <!-- 2. 추가 속성 (그룹: additional) -->
+        <div class="section">
+            <div class="section-header">[ 추가 속성 ]</div>
+            <div class="grid-container">
+                <div class="stat-box" data-group="additional">공격력 증가</div>
+                <div class="stat-box" data-group="additional">물리 피해 증가</div>
+                <div class="stat-box" data-group="additional">열기 피해 증가</div>
+                <div class="stat-box" data-group="additional">전기 피해 증가</div>
+                <div class="stat-box" data-group="additional">냉기 피해 증가</div>
+                <div class="stat-box" data-group="additional">자연 피해 증가</div>
+                <div class="stat-box" data-group="additional">생명력 증가</div>
+                <div class="stat-box" data-group="additional">치유 효율 증가</div>
+                <div class="stat-box" data-group="additional">궁극기 획득 효율 증가</div>
+                <div class="stat-box" data-group="additional">치명타 확률 증가</div>
+                <div class="stat-box" data-group="additional">오리지늄 아츠 증가</div>
+                <div class="stat-box" data-group="additional">아츠 피해 증가</div>
+            </div>
+        </div>
+
+        <!-- 3. 스킬 속성 (그룹: skill) -->
+        <div class="section">
+            <div class="section-header">[ 스킬 속성 ]</div>
+            <div class="grid-container">
+                <div class="stat-box" data-group="skill">강공</div>
+                <div class="stat-box" data-group="skill">억제</div>
+                <div class="stat-box" data-group="skill">추격</div>
+                <div class="stat-box" data-group="skill">분쇄</div>
+                <div class="stat-box" data-group="skill">기예</div>
+                <div class="stat-box" data-group="skill">방출</div>
+                <div class="stat-box" data-group="skill">흐름</div>
+                <div class="stat-box" data-group="skill">효율</div>
+                <div class="stat-box" data-group="skill">사기</div>
+                <div class="stat-box" data-group="skill">고통</div>
+                <div class="stat-box" data-group="skill">의료</div>
+                <div class="stat-box" data-group="skill">골절</div>
+                <div class="stat-box" data-group="skill">잔혹</div>
+                <div class="stat-box" data-group="skill">어둠</div>
+            </div>
+        </div>
+
+        <div class="action-row">
+            <button id="calculate-btn" type="button">계산</button>
+        </div>
+
+        <div id="result-section" class="result-section" aria-live="polite">
+            <div class="section-header">[ 계산 결과 ]</div>
+            <div id="result-content" class="result-content">
+                옵션을 선택한 뒤 계산 버튼을 눌러주세요.
+            </div>
+        </div>
+
+        </div>
+
+        <aside class="weapon-sidebar">
+            <div class="section-header">[ 제외할 무기 ]</div>
+            <div class="weapon-toolbar">
+                <button id="weapon-clear-btn" type="button">선택 해제</button>
+                <div id="weapon-selected-count" class="weapon-selected-count">0개 선택</div>
+            </div>
+            <div id="weapon-list" class="weapon-list">
+                무기 데이터를 불러오는 중입니다...
+            </div>
+        </aside>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
