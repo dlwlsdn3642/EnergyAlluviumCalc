@@ -11,6 +11,7 @@
   },
   {
     "id": 1,
+    "name": "거점 지역",
     "image_name": "dungeon_1.webp",
     "additional_attributes": [
       "공격력 증가",
@@ -35,6 +36,7 @@
   },
   {
     "id": 2,
+    "name": "오리지늄 연구 구역",
     "image_name": "dungeon_2.webp",
     "additional_attributes": [
       "공격력 증가",
@@ -59,6 +61,7 @@
   },
   {
     "id": 3,
+    "name": "광맥 구역",
     "image_name": "dungeon_3.webp",
     "additional_attributes": [
       "생명력 증가",
@@ -83,6 +86,7 @@
   },
   {
     "id": 4,
+    "name": "에너지 공급 고지",
     "image_name": "dungeon_4.webp",
     "additional_attributes": [
       "공격력 증가",
@@ -107,6 +111,7 @@
   },
   {
     "id": 5,
+    "name": "무릉성",
     "image_name": "dungeon_5.webp",
     "additional_attributes": [
       "공격력 증가",

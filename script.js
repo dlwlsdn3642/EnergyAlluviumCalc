@@ -96,7 +96,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       skill: getSelectedOption("skill"),
     };
     const hasAllSelected =
-      Boolean(selected.basic) && Boolean(selected.additional) && Boolean(selected.skill);
+      Boolean(selected.basic) &&
+      Boolean(selected.additional) &&
+      Boolean(selected.skill);
     const hasNoSelected =
       !selected.basic && !selected.additional && !selected.skill;
 
@@ -225,7 +227,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function getSelectedOption(group) {
-  const selected = document.querySelector(`.stat-box[data-group="${group}"].selected`);
+  const selected = document.querySelector(
+    `.stat-box[data-group="${group}"].selected`,
+  );
   return selected ? selected.textContent.trim() : null;
 }
 
@@ -351,16 +355,23 @@ function chooseBetterPlan(current, candidate) {
 
 function findBestPlan({ selected, dungeonData, optionData, commonBasics }) {
   const selectedBasic = normalizeBasicName(selected.basic);
-  const basicCombinations = createBasicCombinations(commonBasics, selectedBasic);
-  const dungeons = dungeonData.filter((entry) => entry.id >= 1 && entry.id <= 5);
+  const basicCombinations = createBasicCombinations(
+    commonBasics,
+    selectedBasic,
+  );
+  const dungeons = dungeonData.filter(
+    (entry) => entry.id >= 1 && entry.id <= 5,
+  );
 
   let bestPlan = null;
 
   dungeons.forEach((dungeon) => {
-    const hasSelectedAdditional = (dungeon.additional_attributes || []).includes(
-      selected.additional,
+    const hasSelectedAdditional = (
+      dungeon.additional_attributes || []
+    ).includes(selected.additional);
+    const hasSelectedSkill = (dungeon.skill_attributes || []).includes(
+      selected.skill,
     );
-    const hasSelectedSkill = (dungeon.skill_attributes || []).includes(selected.skill);
 
     if (!hasSelectedAdditional || !hasSelectedSkill) {
       return;
@@ -412,9 +423,15 @@ function findBestPlan({ selected, dungeonData, optionData, commonBasics }) {
   return bestPlan;
 }
 
-function findBestPlanWithoutSelection({ dungeonData, optionData, commonBasics }) {
+function findBestPlanWithoutSelection({
+  dungeonData,
+  optionData,
+  commonBasics,
+}) {
   const basicCombinations = createAllBasicCombinations(commonBasics);
-  const dungeons = dungeonData.filter((entry) => entry.id >= 1 && entry.id <= 5);
+  const dungeons = dungeonData.filter(
+    (entry) => entry.id >= 1 && entry.id <= 5,
+  );
 
   let bestPlan = null;
 
@@ -487,7 +504,9 @@ function renderBestPlan(target, bestPlan, excludedWeaponCount = 0) {
 
   const matchedOptionItems = bestPlan.matchedOptions
     .map((option) => {
-      const weapons = option.weapons.map((weapon) => escapeHtml(weapon)).join(", ");
+      const weapons = option.weapons
+        .map((weapon) => escapeHtml(weapon))
+        .join(", ");
       return `
         <li>
           <span class="option-line">[${escapeHtml(option.basic)} / ${escapeHtml(option.additional)} / ${escapeHtml(option.skill)}]</span>
@@ -500,8 +519,8 @@ function renderBestPlan(target, bestPlan, excludedWeaponCount = 0) {
   target.innerHTML = `
     <div class="result-card">
       <div class="dungeon-box">
-        <img src="data/${escapeHtml(bestPlan.dungeon.image_name)}" alt="던전 ${bestPlan.dungeon.id}" class="dungeon-image">
-        <div class="dungeon-title">던전 ${bestPlan.dungeon.id}</div>
+        <img src="data/${escapeHtml(bestPlan.dungeon.image_name)}" alt="${bestPlan.dungeon.name}" class="dungeon-image">
+        <div class="dungeon-title">${bestPlan.dungeon.name}</div>
       </div>
       <div class="result-summary">
         <p><strong>추천 기본 3옵:</strong> ${bestPlan.basicSet.map((value) => escapeHtml(value)).join(", ")}</p>
