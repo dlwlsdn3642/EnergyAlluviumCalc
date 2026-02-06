@@ -160,8 +160,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const excludedWeapons = getExcludedWeapons();
-    const filteredOptions = optionData.filter((option) =>
-      option.weapons.every((weapon) => !excludedWeapons.has(weapon)),
+    const filteredOptions = filterOptionsByExcludedWeapons(
+      optionData,
+      excludedWeapons,
     );
 
     const bestPlan = hasNoSelected
@@ -189,6 +190,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     renderBestPlan(resultContent, bestPlan, excludedWeapons.size);
+  }
+
+  function filterOptionsByExcludedWeapons(options, excludedWeapons) {
+    return options
+      .map((option) => {
+        const availableWeapons = option.weapons.filter(
+          (weapon) => !excludedWeapons.has(weapon),
+        );
+
+        if (availableWeapons.length === 0) {
+          return null;
+        }
+
+        return {
+          ...option,
+          weapons: availableWeapons,
+        };
+      })
+      .filter(Boolean);
   }
 
   function getExcludedWeapons() {
@@ -612,6 +632,8 @@ function renderBestPlan(target, bestPlan, excludedWeaponCount = 0) {
     </div>
   `;
 }
+
+
 
 
 
