@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const WEAPON_FILTER_COOKIE = "excluded_weapons";
+  const FOUR_STAR_OPTION_COOKIE = "include_4star_options";
   const COOKIE_EXPIRE_DAYS = 365;
 
   const statBoxes = document.querySelectorAll(".stat-box");
@@ -7,6 +8,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const resultContent = document.getElementById("result-content");
   const weaponList = document.getElementById("weapon-list");
   const weaponClearBtn = document.getElementById("weapon-clear-btn");
+  const fourStarToggleBtn = document.getElementById("fourstar-toggle-btn");
   const weaponSelectedCount = document.getElementById("weapon-selected-count");
 
   let dungeonData = [];
@@ -14,6 +16,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let commonBasics = [];
   let isDataLoaded = false;
   let persistedExcludedWeapons = loadExcludedWeaponsFromCookie();
+  let includeFourStarOptions = loadIncludeFourStarFromCookie();
 
   statBoxes.forEach((box) => {
     box.addEventListener("click", function () {
@@ -35,19 +38,38 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
+  applyFourStarToggleState();
+
   async function loadGameData() {
     try {
-      const [dungeonResponse, optionResponse] = await Promise.all([
+      const requests = [
         fetch("data/dungeon_data.json"),
         fetch("data/option_data.json"),
-      ]);
+      ];
 
-      if (!dungeonResponse.ok || !optionResponse.ok) {
+      if (includeFourStarOptions) {
+        requests.push(fetch("data/option_data_4star.json"));
+      }
+
+      const [dungeonResponse, optionResponse, option4StarResponse] =
+        await Promise.all(requests);
+
+      if (
+        !dungeonResponse.ok ||
+        !optionResponse.ok ||
+        (includeFourStarOptions && !option4StarResponse?.ok)
+      ) {
         throw new Error("데이터 파일 로딩 실패");
       }
 
       dungeonData = await dungeonResponse.json();
-      optionData = normalizeOptionRows(await optionResponse.json());
+
+      const baseOptionRows = await optionResponse.json();
+      const mergedOptionRows = includeFourStarOptions
+        ? baseOptionRows.concat(await option4StarResponse.json())
+        : baseOptionRows;
+
+      optionData = normalizeOptionRows(mergedOptionRows);
       renderWeaponFilter(optionData, persistedExcludedWeapons);
 
       const commonEntry = dungeonData.find((entry) => entry.id === 0);
@@ -75,6 +97,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       input.checked = false;
     });
     syncWeaponSelectionState();
+  });
+
+  fourStarToggleBtn.addEventListener("click", async () => {
+    includeFourStarOptions = !includeFourStarOptions;
+    applyFourStarToggleState();
+    saveIncludeFourStarToCookie(includeFourStarOptions);
+
+    const loaded = await loadGameData();
+    if (!loaded) {
+      resultContent.innerHTML = `
+        <p>데이터를 불러오지 못했습니다.</p>
+        <p>로컬 서버(예: VSCode Live Server)로 페이지를 실행한 뒤 다시 시도해주세요.</p>
+      `;
+      weaponList.textContent = "무기 데이터를 불러오지 못했습니다.";
+      return;
+    }
+
+    resultContent.textContent = includeFourStarOptions
+      ? "4성 옵션을 포함했습니다. 계산을 눌러 결과를 확인하세요."
+      : "4성 옵션을 제외했습니다. 계산을 눌러 결과를 확인하세요.";
   });
 
   calculateBtn.addEventListener("click", async () => {
@@ -183,6 +225,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     syncWeaponSelectionState();
+  }
+
+  function applyFourStarToggleState() {
+    fourStarToggleBtn.classList.toggle("is-active", includeFourStarOptions);
+    fourStarToggleBtn.setAttribute(
+      "aria-pressed",
+      includeFourStarOptions ? "true" : "false",
+    );
+  }
+
+  function loadIncludeFourStarFromCookie() {
+    return getCookieValue(FOUR_STAR_OPTION_COOKIE) === "1";
+  }
+
+  function saveIncludeFourStarToCookie(value) {
+    const expires = new Date(
+      Date.now() + COOKIE_EXPIRE_DAYS * 24 * 60 * 60 * 1000,
+    ).toUTCString();
+
+    document.cookie = `${FOUR_STAR_OPTION_COOKIE}=${value ? "1" : "0"}; expires=${expires}; path=/; SameSite=Lax`;
   }
 
   function loadExcludedWeaponsFromCookie() {
@@ -538,3 +600,8 @@ function renderBestPlan(target, bestPlan, excludedWeaponCount = 0) {
     </div>
   `;
 }
+
+
+
+
+

@@ -55,7 +55,14 @@ body {
     margin-bottom: 10px;
 }
 
-#weapon-clear-btn {
+.weapon-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#weapon-clear-btn,
+#fourstar-toggle-btn {
     border: 1px solid #5a5a5a;
     background: #262626;
     color: #f0f0f0;
@@ -64,8 +71,15 @@ body {
     cursor: pointer;
 }
 
-#weapon-clear-btn:hover {
+#weapon-clear-btn:hover,
+#fourstar-toggle-btn:hover {
     background: #323232;
+}
+
+#fourstar-toggle-btn.is-active {
+    background: #6a3f13;
+    border-color: #d8994d;
+    color: #ffe8c9;
 }
 
 .weapon-selected-count {
@@ -286,3 +300,4 @@ body {
         position: static;
     }
 }
+
