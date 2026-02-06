@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const statBoxes = document.querySelectorAll(".stat-box");
   const calculateBtn = document.getElementById("calculate-btn");
+  const calculateCanyonBtn = document.getElementById("calculate-canyon-btn");
   const resultContent = document.getElementById("result-content");
   const weaponList = document.getElementById("weapon-list");
   const weaponClearBtn = document.getElementById("weapon-clear-btn");
@@ -120,6 +121,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   calculateBtn.addEventListener("click", async () => {
+    await runCalculation(5);
+  });
+
+  calculateCanyonBtn.addEventListener("click", async () => {
+    await runCalculation(4);
+  });
+
+  async function runCalculation(maxDungeonId) {
     if (!isDataLoaded) {
       const loaded = await loadGameData();
       if (!loaded) {
@@ -160,12 +169,14 @@ document.addEventListener("DOMContentLoaded", async () => {
           dungeonData,
           optionData: filteredOptions,
           commonBasics,
+          maxDungeonId,
         })
       : findBestPlan({
           selected,
           dungeonData,
           optionData: filteredOptions,
           commonBasics,
+          maxDungeonId,
         });
 
     if (!bestPlan || bestPlan.overlapCount === 0) {
@@ -178,7 +189,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     renderBestPlan(resultContent, bestPlan, excludedWeapons.size);
-  });
+  }
 
   function getExcludedWeapons() {
     const checked = document.querySelectorAll(".weapon-checkbox:checked");
@@ -415,14 +426,14 @@ function chooseBetterPlan(current, candidate) {
   return current;
 }
 
-function findBestPlan({ selected, dungeonData, optionData, commonBasics }) {
+function findBestPlan({ selected, dungeonData, optionData, commonBasics, maxDungeonId = 5 }) {
   const selectedBasic = normalizeBasicName(selected.basic);
   const basicCombinations = createBasicCombinations(
     commonBasics,
     selectedBasic,
   );
   const dungeons = dungeonData.filter(
-    (entry) => entry.id >= 1 && entry.id <= 5,
+    (entry) => entry.id >= 1 && entry.id <= maxDungeonId,
   );
 
   let bestPlan = null;
@@ -489,10 +500,11 @@ function findBestPlanWithoutSelection({
   dungeonData,
   optionData,
   commonBasics,
+  maxDungeonId = 5,
 }) {
   const basicCombinations = createAllBasicCombinations(commonBasics);
   const dungeons = dungeonData.filter(
-    (entry) => entry.id >= 1 && entry.id <= 5,
+    (entry) => entry.id >= 1 && entry.id <= maxDungeonId,
   );
 
   let bestPlan = null;
@@ -600,6 +612,10 @@ function renderBestPlan(target, bestPlan, excludedWeaponCount = 0) {
     </div>
   `;
 }
+
+
+
+
 
 
 
