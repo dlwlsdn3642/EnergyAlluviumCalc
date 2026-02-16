@@ -1,8 +1,17 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const WEAPON_FILTER_COOKIE = "excluded_weapons";
-  const FOUR_STAR_OPTION_COOKIE = "include_4star_options";
-  const COOKIE_EXPIRE_DAYS = 365;
+import {
+  loadGameData,
+  loadIncludeFourStarFromCookie,
+  loadExcludedWeaponsFromCookie,
+  saveIncludeFourStarToCookie,
+  saveExcludedWeaponsToCookie,
+} from "./data.js";
+import {
+  filterOptionsByExcludedWeapons,
+  findBestPlan,
+  findBestPlanWithoutSelection,
+} from "./planner.js";
 
+document.addEventListener("DOMContentLoaded", async () => {
   const statBoxes = document.querySelectorAll(".stat-box");
   const calculateBtn = document.getElementById("calculate-btn");
   const calculateCanyonBtn = document.getElementById("calculate-canyon-btn");
@@ -39,57 +48,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  applyFourStarToggleState();
+  applyFourStarToggleState(fourStarToggleBtn, includeFourStarOptions);
 
-  async function loadGameData() {
-    try {
-      const requests = [
-        fetch("data/dungeon_data.json"),
-        fetch("data/option_data.json"),
-      ];
-
-      if (includeFourStarOptions) {
-        requests.push(fetch("data/option_data_4star.json"));
-      }
-
-      const [dungeonResponse, optionResponse, option4StarResponse] =
-        await Promise.all(requests);
-
-      if (
-        !dungeonResponse.ok ||
-        !optionResponse.ok ||
-        (includeFourStarOptions && !option4StarResponse?.ok)
-      ) {
-        throw new Error("데이터 파일 로딩 실패");
-      }
-
-      dungeonData = await dungeonResponse.json();
-
-      const baseOptionRows = await optionResponse.json();
-      const mergedOptionRows = includeFourStarOptions
-        ? baseOptionRows.concat(await option4StarResponse.json())
-        : baseOptionRows;
-
-      optionData = normalizeOptionRows(mergedOptionRows);
-      renderWeaponFilter(optionData, persistedExcludedWeapons);
-
-      const commonEntry = dungeonData.find((entry) => entry.id === 0);
-      commonBasics = commonEntry?.basic || [];
-      isDataLoaded = true;
-      return true;
-    } catch (error) {
+  async function refreshGameData() {
+    const loadedData = await loadGameData(includeFourStarOptions);
+    if (!loadedData) {
       isDataLoaded = false;
       return false;
     }
+
+    dungeonData = loadedData.dungeonData;
+    optionData = loadedData.optionData;
+    commonBasics = loadedData.commonBasics;
+    isDataLoaded = true;
+
+    renderWeaponFilter({
+      weaponList,
+      weaponSelectedCount,
+      optionRows: optionData,
+      previouslySelected: persistedExcludedWeapons,
+      onSelectionChanged: syncWeaponSelectionState,
+    });
+    return true;
   }
 
-  const initialLoaded = await loadGameData();
+  const initialLoaded = await refreshGameData();
   if (!initialLoaded) {
-    resultContent.innerHTML = `
-      <p>데이터를 불러오지 못했습니다.</p>
-      <p>브라우저에서 파일을 직접 열었다면(주소가 <code>file://</code>), 로컬 서버로 실행해주세요.</p>
-    `;
-    weaponList.textContent = "무기 데이터를 불러오지 못했습니다.";
+    renderLoadFailure(resultContent, weaponList);
   }
 
   weaponClearBtn.addEventListener("click", () => {
@@ -102,16 +87,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   fourStarToggleBtn.addEventListener("click", async () => {
     includeFourStarOptions = !includeFourStarOptions;
-    applyFourStarToggleState();
+    applyFourStarToggleState(fourStarToggleBtn, includeFourStarOptions);
     saveIncludeFourStarToCookie(includeFourStarOptions);
 
-    const loaded = await loadGameData();
+    const loaded = await refreshGameData();
     if (!loaded) {
-      resultContent.innerHTML = `
-        <p>데이터를 불러오지 못했습니다.</p>
-        <p>로컬 서버(예: VSCode Live Server)로 페이지를 실행한 뒤 다시 시도해주세요.</p>
-      `;
-      weaponList.textContent = "무기 데이터를 불러오지 못했습니다.";
+      renderLoadFailure(resultContent, weaponList);
       return;
     }
 
@@ -130,13 +111,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function runCalculation(maxDungeonId) {
     if (!isDataLoaded) {
-      const loaded = await loadGameData();
+      const loaded = await refreshGameData();
       if (!loaded) {
-        resultContent.innerHTML = `
-          <p>데이터를 불러오지 못했습니다.</p>
-          <p>로컬 서버(예: VSCode Live Server)로 페이지를 실행한 뒤 다시 시도해주세요.</p>
-        `;
-        weaponList.textContent = "무기 데이터를 불러오지 못했습니다.";
+        renderLoadFailure(resultContent, weaponList);
         return;
       }
     }
@@ -192,25 +169,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderBestPlan(resultContent, bestPlan, excludedWeapons.size);
   }
 
-  function filterOptionsByExcludedWeapons(options, excludedWeapons) {
-    return options
-      .map((option) => {
-        const availableWeapons = option.weapons.filter(
-          (weapon) => !excludedWeapons.has(weapon),
-        );
-
-        if (availableWeapons.length === 0) {
-          return null;
-        }
-
-        return {
-          ...option,
-          weapons: availableWeapons,
-        };
-      })
-      .filter(Boolean);
-  }
-
   function getExcludedWeapons() {
     const checked = document.querySelectorAll(".weapon-checkbox:checked");
     return new Set([...checked].map((input) => input.value));
@@ -222,362 +180,67 @@ document.addEventListener("DOMContentLoaded", async () => {
     saveExcludedWeaponsToCookie(excludedWeapons);
     weaponSelectedCount.textContent = `${excludedWeapons.size}개 선택`;
   }
-
-  function renderWeaponFilter(optionRows, previouslySelected = new Set()) {
-    const allWeapons = [...new Set(optionRows.flatMap((row) => row.weapons))]
-      .filter((weapon) => String(weapon).trim())
-      .sort((a, b) => a.localeCompare(b, "ko"));
-
-    if (allWeapons.length === 0) {
-      weaponList.textContent = "표시할 무기 목록이 없습니다.";
-      weaponSelectedCount.textContent = "0개 선택";
-      return;
-    }
-
-    weaponList.innerHTML = "";
-
-    allWeapons.forEach((weaponName) => {
-      const label = document.createElement("label");
-      label.className = "weapon-item";
-
-      const input = document.createElement("input");
-      input.type = "checkbox";
-      input.className = "weapon-checkbox";
-      input.value = weaponName;
-      input.checked = previouslySelected.has(weaponName);
-
-      const text = document.createElement("span");
-      text.textContent = weaponName;
-
-      input.addEventListener("change", syncWeaponSelectionState);
-
-      label.append(input, text);
-      weaponList.appendChild(label);
-    });
-
-    syncWeaponSelectionState();
-  }
-
-  function applyFourStarToggleState() {
-    fourStarToggleBtn.classList.toggle("is-active", includeFourStarOptions);
-    fourStarToggleBtn.setAttribute(
-      "aria-pressed",
-      includeFourStarOptions ? "true" : "false",
-    );
-  }
-
-  function loadIncludeFourStarFromCookie() {
-    return getCookieValue(FOUR_STAR_OPTION_COOKIE) === "1";
-  }
-
-  function saveIncludeFourStarToCookie(value) {
-    const expires = new Date(
-      Date.now() + COOKIE_EXPIRE_DAYS * 24 * 60 * 60 * 1000,
-    ).toUTCString();
-
-    document.cookie = `${FOUR_STAR_OPTION_COOKIE}=${value ? "1" : "0"}; expires=${expires}; path=/; SameSite=Lax`;
-  }
-
-  function loadExcludedWeaponsFromCookie() {
-    const cookieValue = getCookieValue(WEAPON_FILTER_COOKIE);
-    if (!cookieValue) {
-      return new Set();
-    }
-
-    try {
-      const parsed = JSON.parse(cookieValue);
-      if (!Array.isArray(parsed)) {
-        return new Set();
-      }
-      return new Set(parsed.map((weapon) => String(weapon)));
-    } catch (error) {
-      return new Set();
-    }
-  }
-
-  function saveExcludedWeaponsToCookie(weaponsSet) {
-    const expires = new Date(
-      Date.now() + COOKIE_EXPIRE_DAYS * 24 * 60 * 60 * 1000,
-    ).toUTCString();
-    const value = encodeURIComponent(JSON.stringify([...weaponsSet]));
-
-    document.cookie = `${WEAPON_FILTER_COOKIE}=${value}; expires=${expires}; path=/; SameSite=Lax`;
-  }
-
-  function getCookieValue(name) {
-    const encodedName = `${name}=`;
-    const cookieParts = document.cookie.split(";");
-
-    for (const rawPart of cookieParts) {
-      const part = rawPart.trim();
-      if (part.startsWith(encodedName)) {
-        return decodeURIComponent(part.substring(encodedName.length));
-      }
-    }
-
-    return "";
-  }
 });
+
+function renderLoadFailure(resultContent, weaponList) {
+  resultContent.innerHTML = `
+    <p>데이터를 불러오지 못했습니다.</p>
+    <p>로컬 서버(예: VSCode Live Server)로 페이지를 실행한 뒤 다시 시도해주세요.</p>
+  `;
+  weaponList.textContent = "무기 데이터를 불러오지 못했습니다.";
+}
+
+function applyFourStarToggleState(button, isIncluded) {
+  button.classList.toggle("is-active", isIncluded);
+  button.setAttribute("aria-pressed", isIncluded ? "true" : "false");
+}
+
+function renderWeaponFilter({
+  weaponList,
+  weaponSelectedCount,
+  optionRows,
+  previouslySelected = new Set(),
+  onSelectionChanged,
+}) {
+  const allWeapons = [...new Set(optionRows.flatMap((row) => row.weapons))]
+    .filter((weapon) => String(weapon).trim())
+    .sort((a, b) => a.localeCompare(b, "ko"));
+
+  if (allWeapons.length === 0) {
+    weaponList.textContent = "표시할 무기 목록이 없습니다.";
+    weaponSelectedCount.textContent = "0개 선택";
+    onSelectionChanged();
+    return;
+  }
+
+  weaponList.innerHTML = "";
+
+  allWeapons.forEach((weaponName) => {
+    const label = document.createElement("label");
+    label.className = "weapon-item";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.className = "weapon-checkbox";
+    input.value = weaponName;
+    input.checked = previouslySelected.has(weaponName);
+    input.addEventListener("change", onSelectionChanged);
+
+    const text = document.createElement("span");
+    text.textContent = weaponName;
+
+    label.append(input, text);
+    weaponList.appendChild(label);
+  });
+
+  onSelectionChanged();
+}
 
 function getSelectedOption(group) {
   const selected = document.querySelector(
     `.stat-box[data-group="${group}"].selected`,
   );
   return selected ? selected.textContent.trim() : null;
-}
-
-function normalizeBasicName(basic) {
-  const base = (basic || "").trim();
-  const basicMap = {
-    민첩: "민첩 증가",
-    "민첩 증가": "민첩 증가",
-    힘: "힘 증가",
-    "힘 증가": "힘 증가",
-    의지: "의지 증가",
-    "의지 증가": "의지 증가",
-    지능: "지능 증가",
-    "지능 증가": "지능 증가",
-    "주요 능력치": "주요 능력치 증가",
-    "주요 능력치 증가": "주요 능력치 증가",
-  };
-
-  return basicMap[base] || base;
-}
-
-function normalizeOptionRows(rows) {
-  return rows
-    .map((row, index) => ({
-      id: index,
-      basic: normalizeBasicName(row.basic),
-      additional: (row.additional_attributes || "").trim(),
-      skill: (row.skill_attributes || "").trim(),
-      weapons: Array.isArray(row["무기"]) ? row["무기"] : [],
-    }))
-    .filter((row) => row.basic && row.additional && row.skill);
-}
-
-function createBasicCombinations(commonBasics, selectedBasic) {
-  const normalizedSelected = normalizeBasicName(selectedBasic);
-
-  if (!commonBasics.includes(normalizedSelected)) {
-    return [];
-  }
-
-  const others = commonBasics.filter((value) => value !== normalizedSelected);
-  const combinations = [];
-
-  for (let i = 0; i < others.length; i += 1) {
-    for (let j = i + 1; j < others.length; j += 1) {
-      combinations.push([normalizedSelected, others[i], others[j]]);
-    }
-  }
-
-  return combinations;
-}
-
-function createAllBasicCombinations(commonBasics) {
-  const combinations = [];
-
-  for (let i = 0; i < commonBasics.length; i += 1) {
-    for (let j = i + 1; j < commonBasics.length; j += 1) {
-      for (let k = j + 1; k < commonBasics.length; k += 1) {
-        combinations.push([commonBasics[i], commonBasics[j], commonBasics[k]]);
-      }
-    }
-  }
-
-  return combinations;
-}
-
-function collectMatchedOptions({
-  normalizedOptions,
-  dungeon,
-  basicSet,
-  fixedType,
-  fixedValue,
-}) {
-  const basicPool = new Set(basicSet);
-
-  if (fixedType === "additional") {
-    const skillPool = new Set(dungeon.skill_attributes || []);
-    return normalizedOptions.filter(
-      (option) =>
-        basicPool.has(option.basic) &&
-        option.additional === fixedValue &&
-        skillPool.has(option.skill),
-    );
-  }
-
-  const additionalPool = new Set(dungeon.additional_attributes || []);
-  return normalizedOptions.filter(
-    (option) =>
-      basicPool.has(option.basic) &&
-      option.skill === fixedValue &&
-      additionalPool.has(option.additional),
-  );
-}
-
-function uniqueWeapons(matchedOptions) {
-  const merged = matchedOptions.flatMap((option) => option.weapons);
-  return [...new Set(merged)];
-}
-
-function chooseBetterPlan(current, candidate) {
-  if (!current) {
-    return candidate;
-  }
-
-  if (candidate.overlapCount !== current.overlapCount) {
-    return candidate.overlapCount > current.overlapCount ? candidate : current;
-  }
-
-  if (candidate.weaponCount !== current.weaponCount) {
-    return candidate.weaponCount > current.weaponCount ? candidate : current;
-  }
-
-  if (candidate.dungeon.id !== current.dungeon.id) {
-    return candidate.dungeon.id < current.dungeon.id ? candidate : current;
-  }
-
-  if (candidate.fixedType !== current.fixedType) {
-    return candidate.fixedType === "additional" ? candidate : current;
-  }
-
-  return current;
-}
-
-function findBestPlan({ selected, dungeonData, optionData, commonBasics, maxDungeonId = 5 }) {
-  const selectedBasic = normalizeBasicName(selected.basic);
-  const basicCombinations = createBasicCombinations(
-    commonBasics,
-    selectedBasic,
-  );
-  const dungeons = dungeonData.filter(
-    (entry) => entry.id >= 1 && entry.id <= maxDungeonId,
-  );
-
-  let bestPlan = null;
-
-  dungeons.forEach((dungeon) => {
-    const hasSelectedAdditional = (
-      dungeon.additional_attributes || []
-    ).includes(selected.additional);
-    const hasSelectedSkill = (dungeon.skill_attributes || []).includes(
-      selected.skill,
-    );
-
-    if (!hasSelectedAdditional || !hasSelectedSkill) {
-      return;
-    }
-
-    basicCombinations.forEach((basicSet) => {
-      const additionalFixedMatches = collectMatchedOptions({
-        normalizedOptions: optionData,
-        dungeon,
-        basicSet,
-        fixedType: "additional",
-        fixedValue: selected.additional,
-      });
-      const additionalWeapons = uniqueWeapons(additionalFixedMatches);
-
-      bestPlan = chooseBetterPlan(bestPlan, {
-        dungeon,
-        basicSet,
-        fixedType: "additional",
-        fixedValue: selected.additional,
-        matchedOptions: additionalFixedMatches,
-        overlapCount: additionalFixedMatches.length,
-        weapons: additionalWeapons,
-        weaponCount: additionalWeapons.length,
-      });
-
-      const skillFixedMatches = collectMatchedOptions({
-        normalizedOptions: optionData,
-        dungeon,
-        basicSet,
-        fixedType: "skill",
-        fixedValue: selected.skill,
-      });
-      const skillWeapons = uniqueWeapons(skillFixedMatches);
-
-      bestPlan = chooseBetterPlan(bestPlan, {
-        dungeon,
-        basicSet,
-        fixedType: "skill",
-        fixedValue: selected.skill,
-        matchedOptions: skillFixedMatches,
-        overlapCount: skillFixedMatches.length,
-        weapons: skillWeapons,
-        weaponCount: skillWeapons.length,
-      });
-    });
-  });
-
-  return bestPlan;
-}
-
-function findBestPlanWithoutSelection({
-  dungeonData,
-  optionData,
-  commonBasics,
-  maxDungeonId = 5,
-}) {
-  const basicCombinations = createAllBasicCombinations(commonBasics);
-  const dungeons = dungeonData.filter(
-    (entry) => entry.id >= 1 && entry.id <= maxDungeonId,
-  );
-
-  let bestPlan = null;
-
-  dungeons.forEach((dungeon) => {
-    basicCombinations.forEach((basicSet) => {
-      (dungeon.additional_attributes || []).forEach((additionalValue) => {
-        const additionalFixedMatches = collectMatchedOptions({
-          normalizedOptions: optionData,
-          dungeon,
-          basicSet,
-          fixedType: "additional",
-          fixedValue: additionalValue,
-        });
-        const additionalWeapons = uniqueWeapons(additionalFixedMatches);
-
-        bestPlan = chooseBetterPlan(bestPlan, {
-          dungeon,
-          basicSet,
-          fixedType: "additional",
-          fixedValue: additionalValue,
-          matchedOptions: additionalFixedMatches,
-          overlapCount: additionalFixedMatches.length,
-          weapons: additionalWeapons,
-          weaponCount: additionalWeapons.length,
-        });
-      });
-
-      (dungeon.skill_attributes || []).forEach((skillValue) => {
-        const skillFixedMatches = collectMatchedOptions({
-          normalizedOptions: optionData,
-          dungeon,
-          basicSet,
-          fixedType: "skill",
-          fixedValue: skillValue,
-        });
-        const skillWeapons = uniqueWeapons(skillFixedMatches);
-
-        bestPlan = chooseBetterPlan(bestPlan, {
-          dungeon,
-          basicSet,
-          fixedType: "skill",
-          fixedValue: skillValue,
-          matchedOptions: skillFixedMatches,
-          overlapCount: skillFixedMatches.length,
-          weapons: skillWeapons,
-          weaponCount: skillWeapons.length,
-        });
-      });
-    });
-  });
-
-  return bestPlan;
 }
 
 function escapeHtml(text) {
@@ -613,8 +276,8 @@ function renderBestPlan(target, bestPlan, excludedWeaponCount = 0) {
   target.innerHTML = `
     <div class="result-card">
       <div class="dungeon-box">
-        <img src="data/${escapeHtml(bestPlan.dungeon.image_name)}" alt="${bestPlan.dungeon.name}" class="dungeon-image">
-        <div class="dungeon-title">${bestPlan.dungeon.name}</div>
+        <img src="data/${escapeHtml(bestPlan.dungeon.image_name)}" alt="${escapeHtml(bestPlan.dungeon.name)}" class="dungeon-image">
+        <div class="dungeon-title">${escapeHtml(bestPlan.dungeon.name)}</div>
       </div>
       <div class="result-summary">
         <p><strong>추천 기본 3옵:</strong> ${bestPlan.basicSet.map((value) => escapeHtml(value)).join(", ")}</p>
@@ -632,14 +295,3 @@ function renderBestPlan(target, bestPlan, excludedWeaponCount = 0) {
     </div>
   `;
 }
-
-
-
-
-
-
-
-
-
-
-
