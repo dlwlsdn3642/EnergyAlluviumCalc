@@ -2,38 +2,40 @@ import { normalizeBasicName } from "./planner.js";
 
 const WEAPON_FILTER_COOKIE = "excluded_weapons";
 const FOUR_STAR_OPTION_COOKIE = "include_4star_options";
+const UNOWNED_ONLY_COOKIE = "show_unowned_only";
 const COOKIE_EXPIRE_DAYS = 365;
 
 export async function loadGameData(includeFourStarOptions) {
   try {
-    const requests = [fetch("data/dungeon_data.json"), fetch("data/option_data.json")];
+    const requests = [fetch("data/dungeon_data.json"), fetch("data/weapons.json")];
 
     if (includeFourStarOptions) {
-      requests.push(fetch("data/option_data_4star.json"));
+      requests.push(fetch("data/weapons_4star.json"));
     }
 
-    const [dungeonResponse, optionResponse, option4StarResponse] =
+    const [dungeonResponse, weaponResponse, weapon4StarResponse] =
       await Promise.all(requests);
 
     if (
       !dungeonResponse.ok ||
-      !optionResponse.ok ||
-      (includeFourStarOptions && !option4StarResponse?.ok)
+      !weaponResponse.ok ||
+      (includeFourStarOptions && !weapon4StarResponse?.ok)
     ) {
       throw new Error("데이터 파일 로딩 실패");
     }
 
     const dungeonData = await dungeonResponse.json();
-    const baseOptionRows = await optionResponse.json();
-    const mergedOptionRows = includeFourStarOptions
-      ? baseOptionRows.concat(await option4StarResponse.json())
-      : baseOptionRows;
-    const optionData = normalizeOptionRows(mergedOptionRows);
+    const baseWeapons = await weaponResponse.json();
+    const mergedWeapons = includeFourStarOptions
+      ? baseWeapons.concat(await weapon4StarResponse.json())
+      : baseWeapons;
+    const optionData = normalizeOptionsFromWeapons(mergedWeapons);
+    const weaponMetaByName = buildWeaponMetaByName(mergedWeapons);
 
     const commonEntry = dungeonData.find((entry) => entry.id === 0);
     const commonBasics = commonEntry?.basic || [];
 
-    return { dungeonData, optionData, commonBasics };
+    return { dungeonData, optionData, commonBasics, weaponMetaByName };
   } catch (error) {
     return null;
   }
@@ -49,6 +51,18 @@ export function saveIncludeFourStarToCookie(value) {
   ).toUTCString();
 
   document.cookie = `${FOUR_STAR_OPTION_COOKIE}=${value ? "1" : "0"}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+export function loadShowUnownedOnlyFromCookie() {
+  return getCookieValue(UNOWNED_ONLY_COOKIE) === "1";
+}
+
+export function saveShowUnownedOnlyToCookie(value) {
+  const expires = new Date(
+    Date.now() + COOKIE_EXPIRE_DAYS * 24 * 60 * 60 * 1000,
+  ).toUTCString();
+
+  document.cookie = `${UNOWNED_ONLY_COOKIE}=${value ? "1" : "0"}; expires=${expires}; path=/; SameSite=Lax`;
 }
 
 export function loadExcludedWeaponsFromCookie() {
@@ -77,16 +91,90 @@ export function saveExcludedWeaponsToCookie(weaponsSet) {
   document.cookie = `${WEAPON_FILTER_COOKIE}=${value}; expires=${expires}; path=/; SameSite=Lax`;
 }
 
-function normalizeOptionRows(rows) {
-  return rows
-    .map((row, index) => ({
-      id: index,
-      basic: normalizeBasicName(row.basic),
-      additional: (row.additional_attributes || "").trim(),
-      skill: (row.skill_attributes || "").trim(),
-      weapons: Array.isArray(row["무기"]) ? row["무기"] : [],
-    }))
-    .filter((row) => row.basic && row.additional && row.skill);
+function normalizeOptionsFromWeapons(weapons) {
+  const groupedOptions = new Map();
+
+  weapons.forEach((weapon) => {
+    const weaponName = String(weapon?.name || "").trim();
+    const options = Array.isArray(weapon?.options) ? weapon.options : [];
+
+    options.forEach((option) => {
+      const basic = normalizeBasicName(option?.basic);
+      const additional = String(
+        option?.additional || option?.additional_attributes || "",
+      ).trim();
+      const skill = String(option?.skill || option?.skill_attributes || "").trim();
+
+      if (!weaponName || !basic || !additional || !skill) {
+        return;
+      }
+
+      const key = `${basic}\u0001${additional}\u0001${skill}`;
+      const current = groupedOptions.get(key);
+
+      if (!current) {
+        groupedOptions.set(key, {
+          basic,
+          additional,
+          skill,
+          weapons: [weaponName],
+        });
+        return;
+      }
+
+      if (!current.weapons.includes(weaponName)) {
+        current.weapons.push(weaponName);
+      }
+    });
+  });
+
+  return [...groupedOptions.values()].map((row, index) => ({
+    id: index,
+    basic: row.basic,
+    additional: row.additional,
+    skill: row.skill,
+    weapons: row.weapons,
+  }));
+}
+
+function buildWeaponMetaByName(weapons) {
+  const metaByName = {};
+
+  weapons.forEach((weapon) => {
+    const name = String(weapon?.name || "").trim();
+    if (!name) {
+      return;
+    }
+
+    const rawOptions = Array.isArray(weapon?.options) ? weapon.options : [];
+    const options = rawOptions
+      .map((option) => {
+        const basic = normalizeBasicName(option?.basic);
+        const additional = String(
+          option?.additional || option?.additional_attributes || "",
+        ).trim();
+        const skill = String(option?.skill || option?.skill_attributes || "").trim();
+
+        if (!basic || !additional || !skill) {
+          return null;
+        }
+
+        return {
+          basic,
+          additional,
+          skill,
+          text: `${basic} / ${additional} / ${skill}`,
+        };
+      })
+      .filter(Boolean);
+
+    metaByName[name] = {
+      imageName: String(weapon?.image_name || "").trim(),
+      options,
+    };
+  });
+
+  return metaByName;
 }
 
 function getCookieValue(name) {

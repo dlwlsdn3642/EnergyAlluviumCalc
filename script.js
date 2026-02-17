@@ -1,8 +1,10 @@
 import {
   loadGameData,
   loadIncludeFourStarFromCookie,
+  loadShowUnownedOnlyFromCookie,
   loadExcludedWeaponsFromCookie,
   saveIncludeFourStarToCookie,
+  saveShowUnownedOnlyToCookie,
   saveExcludedWeaponsToCookie,
 } from "./data.js";
 import {
@@ -19,14 +21,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   const weaponList = document.getElementById("weapon-list");
   const weaponClearBtn = document.getElementById("weapon-clear-btn");
   const fourStarToggleBtn = document.getElementById("fourstar-toggle-btn");
+  const unownedFilterBtn = document.getElementById("unowned-filter-btn");
   const weaponSelectedCount = document.getElementById("weapon-selected-count");
 
   let dungeonData = [];
   let optionData = [];
   let commonBasics = [];
+  let weaponMetaByName = {};
   let isDataLoaded = false;
   let persistedExcludedWeapons = loadExcludedWeaponsFromCookie();
   let includeFourStarOptions = loadIncludeFourStarFromCookie();
+  let showUnownedOnly = loadShowUnownedOnlyFromCookie();
 
   statBoxes.forEach((box) => {
     box.addEventListener("click", function () {
@@ -49,6 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   applyFourStarToggleState(fourStarToggleBtn, includeFourStarOptions);
+  applyUnownedFilterToggleState(unownedFilterBtn, showUnownedOnly);
 
   async function refreshGameData() {
     const loadedData = await loadGameData(includeFourStarOptions);
@@ -60,12 +66,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     dungeonData = loadedData.dungeonData;
     optionData = loadedData.optionData;
     commonBasics = loadedData.commonBasics;
+    weaponMetaByName = loadedData.weaponMetaByName || {};
     isDataLoaded = true;
 
     renderWeaponFilter({
       weaponList,
       weaponSelectedCount,
       optionRows: optionData,
+      weaponMetaByName,
       previouslySelected: persistedExcludedWeapons,
       onSelectionChanged: syncWeaponSelectionState,
     });
@@ -78,9 +86,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   weaponClearBtn.addEventListener("click", () => {
-    const checked = document.querySelectorAll(".weapon-checkbox:checked");
-    checked.forEach((input) => {
-      input.checked = false;
+    const selectedItems = weaponList.querySelectorAll(".weapon-item.is-excluded");
+    selectedItems.forEach((item) => {
+      item.classList.remove("is-excluded");
     });
     syncWeaponSelectionState();
   });
@@ -99,6 +107,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     resultContent.textContent = includeFourStarOptions
       ? "4성 옵션을 포함했습니다. 계산을 눌러 결과를 확인하세요."
       : "4성 옵션을 제외했습니다. 계산을 눌러 결과를 확인하세요.";
+  });
+
+  unownedFilterBtn.addEventListener("click", () => {
+    showUnownedOnly = !showUnownedOnly;
+    applyUnownedFilterToggleState(unownedFilterBtn, showUnownedOnly);
+    saveShowUnownedOnlyToCookie(showUnownedOnly);
+    updateWeaponVisibility();
   });
 
   calculateBtn.addEventListener("click", async () => {
@@ -166,12 +181,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    renderBestPlan(resultContent, bestPlan, excludedWeapons.size);
+    renderBestPlan(
+      resultContent,
+      bestPlan,
+      excludedWeapons.size,
+      weaponMetaByName,
+    );
   }
 
   function getExcludedWeapons() {
-    const checked = document.querySelectorAll(".weapon-checkbox:checked");
-    return new Set([...checked].map((input) => input.value));
+    const selectedItems = weaponList.querySelectorAll(".weapon-item.is-excluded");
+    return new Set(
+      [...selectedItems]
+        .map((item) => item.dataset.weaponName || "")
+        .filter((name) => name),
+    );
   }
 
   function syncWeaponSelectionState() {
@@ -179,6 +203,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     persistedExcludedWeapons = excludedWeapons;
     saveExcludedWeaponsToCookie(excludedWeapons);
     weaponSelectedCount.textContent = `${excludedWeapons.size}개 선택`;
+    updateWeaponVisibility();
+  }
+
+  function updateWeaponVisibility() {
+    const items = weaponList.querySelectorAll(".weapon-item");
+    items.forEach((item) => {
+      const shouldHide =
+        showUnownedOnly && item.classList.contains("is-excluded");
+      item.classList.toggle("is-hidden-by-filter", shouldHide);
+    });
   }
 });
 
@@ -195,10 +229,16 @@ function applyFourStarToggleState(button, isIncluded) {
   button.setAttribute("aria-pressed", isIncluded ? "true" : "false");
 }
 
+function applyUnownedFilterToggleState(button, isEnabled) {
+  button.classList.toggle("is-active", isEnabled);
+  button.setAttribute("aria-pressed", isEnabled ? "true" : "false");
+}
+
 function renderWeaponFilter({
   weaponList,
   weaponSelectedCount,
   optionRows,
+  weaponMetaByName = {},
   previouslySelected = new Set(),
   onSelectionChanged,
 }) {
@@ -216,21 +256,42 @@ function renderWeaponFilter({
   weaponList.innerHTML = "";
 
   allWeapons.forEach((weaponName) => {
-    const label = document.createElement("label");
-    label.className = "weapon-item";
+    const item = document.createElement("div");
+    item.className = "weapon-item";
+    item.dataset.weaponName = weaponName;
+    item.setAttribute("role", "button");
+    item.setAttribute("tabindex", "0");
+    if (previouslySelected.has(weaponName)) {
+      item.classList.add("is-excluded");
+    }
 
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.className = "weapon-checkbox";
-    input.value = weaponName;
-    input.checked = previouslySelected.has(weaponName);
-    input.addEventListener("change", onSelectionChanged);
+    const attributeText =
+      weaponMetaByName[weaponName]?.options?.[0]?.text || "속성 정보 없음";
+    item.innerHTML = renderWeaponCard({
+      weaponName,
+      attributeText,
+      imageName: weaponMetaByName[weaponName]?.imageName,
+    });
 
-    const text = document.createElement("span");
-    text.textContent = weaponName;
+    const weaponCard = item.firstElementChild;
+    if (weaponCard) {
+      weaponCard.classList.add("weapon-card--compact");
+    }
 
-    label.append(input, text);
-    weaponList.appendChild(label);
+    item.addEventListener("click", () => {
+      item.classList.toggle("is-excluded");
+      onSelectionChanged();
+    });
+    item.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      event.preventDefault();
+      item.classList.toggle("is-excluded");
+      onSelectionChanged();
+    });
+
+    weaponList.appendChild(item);
   });
 
   onSelectionChanged();
@@ -252,22 +313,45 @@ function escapeHtml(text) {
     .replaceAll("'", "&#39;");
 }
 
-function renderBestPlan(target, bestPlan, excludedWeaponCount = 0) {
+function renderBestPlan(
+  target,
+  bestPlan,
+  excludedWeaponCount = 0,
+  weaponMetaByName = {},
+) {
   const fixedLabel =
     bestPlan.fixedType === "additional" ? "추가 속성 고정" : "스킬 속성 고정";
-  const matchedWeaponText = bestPlan.weapons
-    .map((weapon) => escapeHtml(weapon))
-    .join(", ");
+  const matchedWeaponCards = bestPlan.weapons
+    .map((weapon) =>
+      renderWeaponCard({
+        weaponName: weapon,
+        attributeText: resolveWeaponAttributeText(
+          weapon,
+          bestPlan.matchedOptions,
+          weaponMetaByName,
+        ),
+        imageName: weaponMetaByName[weapon]?.imageName,
+      }),
+    )
+    .join("");
 
   const matchedOptionItems = bestPlan.matchedOptions
     .map((option) => {
-      const weapons = option.weapons
-        .map((weapon) => escapeHtml(weapon))
-        .join(", ");
+      const optionAttributeText =
+        `${option.basic} / ${option.additional} / ${option.skill}`;
+      const weaponCards = option.weapons
+        .map((weapon) =>
+          renderWeaponCard({
+            weaponName: weapon,
+            attributeText: optionAttributeText,
+            imageName: weaponMetaByName[weapon]?.imageName,
+          }),
+        )
+        .join("");
       return `
         <li>
           <span class="option-line">[${escapeHtml(option.basic)} / ${escapeHtml(option.additional)} / ${escapeHtml(option.skill)}]</span>
-          <span class="weapon-line">${weapons}</span>
+          <div class="weapon-card-list">${weaponCards || '<span class="weapon-empty">없음</span>'}</div>
         </li>
       `;
     })
@@ -276,7 +360,7 @@ function renderBestPlan(target, bestPlan, excludedWeaponCount = 0) {
   target.innerHTML = `
     <div class="result-card">
       <div class="dungeon-box">
-        <img src="data/${escapeHtml(bestPlan.dungeon.image_name)}" alt="${escapeHtml(bestPlan.dungeon.name)}" class="dungeon-image">
+        <img src="data/dungeon_images/${escapeHtml(bestPlan.dungeon.image_name)}" alt="${escapeHtml(bestPlan.dungeon.name)}" class="dungeon-image">
         <div class="dungeon-title">${escapeHtml(bestPlan.dungeon.name)}</div>
       </div>
       <div class="result-summary">
@@ -284,7 +368,10 @@ function renderBestPlan(target, bestPlan, excludedWeaponCount = 0) {
         <p><strong>추천 고정:</strong> ${fixedLabel} - ${escapeHtml(bestPlan.fixedValue)}</p>
         <p><strong>중첩 유효옵:</strong> ${bestPlan.overlapCount}개</p>
         <p><strong>제외한 무기:</strong> ${excludedWeaponCount}개</p>
-        <p><strong>해당 무기:</strong> ${matchedWeaponText || "없음"}</p>
+        <div class="result-weapon-group">
+          <strong>해당 무기:</strong>
+          <div class="weapon-card-list">${matchedWeaponCards || '<span class="weapon-empty">없음</span>'}</div>
+        </div>
       </div>
     </div>
     <div class="matched-options">
@@ -292,6 +379,34 @@ function renderBestPlan(target, bestPlan, excludedWeaponCount = 0) {
       <ul>
         ${matchedOptionItems}
       </ul>
+    </div>
+  `;
+}
+
+function resolveWeaponAttributeText(weaponName, matchedOptions, weaponMetaByName) {
+  const matched = matchedOptions.find((option) =>
+    option.weapons.includes(weaponName),
+  );
+  if (matched) {
+    return `${matched.basic} / ${matched.additional} / ${matched.skill}`;
+  }
+
+  const fallback = weaponMetaByName[weaponName]?.options?.[0]?.text;
+  return fallback || "속성 정보 없음";
+}
+
+function renderWeaponCard({ weaponName, attributeText, imageName }) {
+  const imageHtml = imageName
+    ? `<img src="data/weapon_images/${escapeHtml(imageName)}" alt="${escapeHtml(weaponName)}" class="weapon-card-image">`
+    : '<div class="weapon-card-image weapon-card-image--placeholder" aria-hidden="true"></div>';
+
+  return `
+    <div class="weapon-card">
+      ${imageHtml}
+      <div class="weapon-card-text">
+        <div class="weapon-card-name">${escapeHtml(weaponName)}</div>
+        <div class="weapon-card-attrs">${escapeHtml(attributeText)}</div>
+      </div>
     </div>
   `;
 }
