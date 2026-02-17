@@ -9,7 +9,7 @@ import {
 } from "./data.js";
 import {
   filterOptionsByExcludedWeapons,
-  findBestPlan,
+  findPlansByDungeon,
   findBestPlanWithoutSelection,
 } from "./planner.js";
 
@@ -157,33 +157,52 @@ document.addEventListener("DOMContentLoaded", async () => {
       excludedWeapons,
     );
 
-    const bestPlan = hasNoSelected
-      ? findBestPlanWithoutSelection({
-          dungeonData,
-          optionData: filteredOptions,
-          commonBasics,
-          maxDungeonId,
-        })
-      : findBestPlan({
-          selected,
-          dungeonData,
-          optionData: filteredOptions,
-          commonBasics,
-          maxDungeonId,
-        });
+    if (hasNoSelected) {
+      const bestPlan = findBestPlanWithoutSelection({
+        dungeonData,
+        optionData: filteredOptions,
+        commonBasics,
+        maxDungeonId,
+      });
 
-    if (!bestPlan || bestPlan.overlapCount === 0) {
+      if (!bestPlan || bestPlan.overlapCount === 0) {
+        resultContent.innerHTML = `
+          <p>선택한 옵션을 포함해 중첩되는 유효옵을 찾지 못했습니다.</p>
+          <p>제외된 무기: ${excludedWeapons.size}개</p>
+          <p>다른 옵션 조합으로 다시 계산해보세요.</p>
+        `;
+        return;
+      }
+
+      renderBestPlan(
+        resultContent,
+        bestPlan,
+        excludedWeapons.size,
+        weaponMetaByName,
+      );
+      return;
+    }
+
+    const plansByDungeon = findPlansByDungeon({
+      selected,
+      dungeonData,
+      optionData: filteredOptions,
+      commonBasics,
+      maxDungeonId,
+    });
+
+    if (plansByDungeon.length === 0) {
       resultContent.innerHTML = `
-        <p>선택한 옵션을 포함해 중첩되는 유효옵을 찾지 못했습니다.</p>
+        <p>선택한 3옵 조합이 나오는 던전을 찾지 못했습니다.</p>
         <p>제외된 무기: ${excludedWeapons.size}개</p>
         <p>다른 옵션 조합으로 다시 계산해보세요.</p>
       `;
       return;
     }
 
-    renderBestPlan(
+    renderBestPlanList(
       resultContent,
-      bestPlan,
+      plansByDungeon,
       excludedWeapons.size,
       weaponMetaByName,
     );
@@ -319,6 +338,49 @@ function renderBestPlan(
   excludedWeaponCount = 0,
   weaponMetaByName = {},
 ) {
+  target.innerHTML = createPlanResultMarkup({
+    bestPlan,
+    excludedWeaponCount,
+    weaponMetaByName,
+  });
+}
+
+function renderBestPlanList(
+  target,
+  plans,
+  excludedWeaponCount = 0,
+  weaponMetaByName = {},
+) {
+  const listHtml = plans
+    .map(
+      (plan, index) => `
+        <div class="result-list-item">
+          <div class="result-list-rank">#${index + 1}</div>
+          ${createPlanResultMarkup({
+            bestPlan: plan,
+            excludedWeaponCount,
+            weaponMetaByName,
+          })}
+        </div>
+      `,
+    )
+    .join("");
+
+  target.innerHTML = `
+    <p class="result-list-summary">
+      선택한 3옵이 나오는 던전 ${plans.length}개를 중첩 유효옵 순으로 정렬했습니다.
+    </p>
+    <div class="result-list">
+      ${listHtml}
+    </div>
+  `;
+}
+
+function createPlanResultMarkup({
+  bestPlan,
+  excludedWeaponCount = 0,
+  weaponMetaByName = {},
+}) {
   const fixedLabel =
     bestPlan.fixedType === "additional" ? "추가 속성 고정" : "스킬 속성 고정";
   const matchedWeaponCards = bestPlan.weapons
@@ -357,7 +419,7 @@ function renderBestPlan(
     })
     .join("");
 
-  target.innerHTML = `
+  return `
     <div class="result-card">
       <div class="dungeon-box">
         <img src="data/dungeon_images/${escapeHtml(bestPlan.dungeon.image_name)}" alt="${escapeHtml(bestPlan.dungeon.name)}" class="dungeon-image">

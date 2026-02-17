@@ -275,6 +275,29 @@ body {
     color: #d0d0d0;
 }
 
+.result-list-summary {
+    margin: 0 0 10px;
+    color: #c8c8c8;
+}
+
+.result-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.result-list-item {
+    border-top: 1px solid #3b3b3b;
+    padding-top: 12px;
+}
+
+.result-list-rank {
+    display: inline-block;
+    margin-bottom: 8px;
+    color: #e9e9e9;
+    font-weight: 700;
+}
+
 .result-card {
     display: grid;
     grid-template-columns: 130px 1fr;
@@ -418,4 +441,3 @@ body {
         position: static;
     }
 }
-

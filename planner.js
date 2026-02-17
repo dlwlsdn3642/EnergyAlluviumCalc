@@ -111,6 +111,99 @@ export function findBestPlan({
   return bestPlan;
 }
 
+export function findPlansByDungeon({
+  selected,
+  dungeonData,
+  optionData,
+  commonBasics,
+  maxDungeonId = 5,
+}) {
+  const selectedBasic = normalizeBasicName(selected.basic);
+  const basicCombinations = createBasicCombinations(
+    commonBasics,
+    selectedBasic,
+  );
+  const dungeons = dungeonData.filter(
+    (entry) => entry.id >= 1 && entry.id <= maxDungeonId,
+  );
+
+  const plans = [];
+
+  dungeons.forEach((dungeon) => {
+    const hasSelectedAdditional = (
+      dungeon.additional_attributes || []
+    ).includes(selected.additional);
+    const hasSelectedSkill = (dungeon.skill_attributes || []).includes(
+      selected.skill,
+    );
+
+    if (!hasSelectedAdditional || !hasSelectedSkill) {
+      return;
+    }
+
+    let bestPlanForDungeon = null;
+
+    basicCombinations.forEach((basicSet) => {
+      const additionalFixedMatches = collectMatchedOptions({
+        normalizedOptions: optionData,
+        dungeon,
+        basicSet,
+        fixedType: "additional",
+        fixedValue: selected.additional,
+      });
+      const additionalWeapons = uniqueWeapons(additionalFixedMatches);
+
+      bestPlanForDungeon = chooseBetterPlan(bestPlanForDungeon, {
+        dungeon,
+        basicSet,
+        fixedType: "additional",
+        fixedValue: selected.additional,
+        matchedOptions: additionalFixedMatches,
+        overlapCount: additionalFixedMatches.length,
+        weapons: additionalWeapons,
+        weaponCount: additionalWeapons.length,
+      });
+
+      const skillFixedMatches = collectMatchedOptions({
+        normalizedOptions: optionData,
+        dungeon,
+        basicSet,
+        fixedType: "skill",
+        fixedValue: selected.skill,
+      });
+      const skillWeapons = uniqueWeapons(skillFixedMatches);
+
+      bestPlanForDungeon = chooseBetterPlan(bestPlanForDungeon, {
+        dungeon,
+        basicSet,
+        fixedType: "skill",
+        fixedValue: selected.skill,
+        matchedOptions: skillFixedMatches,
+        overlapCount: skillFixedMatches.length,
+        weapons: skillWeapons,
+        weaponCount: skillWeapons.length,
+      });
+    });
+
+    if (bestPlanForDungeon) {
+      plans.push(bestPlanForDungeon);
+    }
+  });
+
+  return plans.sort((a, b) => {
+    if (a.overlapCount !== b.overlapCount) {
+      return b.overlapCount - a.overlapCount;
+    }
+    if (a.weaponCount !== b.weaponCount) {
+      return b.weaponCount - a.weaponCount;
+    }
+    if (a.fixedType !== b.fixedType) {
+      return a.fixedType === "additional" ? -1 : 1;
+    }
+    return a.dungeon.id - b.dungeon.id;
+  });
+}
+
 export function findBestPlanWithoutSelection({
   dungeonData,
   optionData,
