@@ -19,7 +19,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const calculateCanyonBtn = document.getElementById("calculate-canyon-btn");
   const resultContent = document.getElementById("result-content");
   const weaponList = document.getElementById("weapon-list");
-  const weaponClearBtn = document.getElementById("weapon-clear-btn");
   const fourStarToggleBtn = document.getElementById("fourstar-toggle-btn");
   const unownedFilterBtn = document.getElementById("unowned-filter-btn");
   const weaponSelectedCount = document.getElementById("weapon-selected-count");
@@ -84,14 +83,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!initialLoaded) {
     renderLoadFailure(resultContent, weaponList);
   }
-
-  weaponClearBtn.addEventListener("click", () => {
-    const selectedItems = weaponList.querySelectorAll(".weapon-item.is-excluded");
-    selectedItems.forEach((item) => {
-      item.classList.remove("is-excluded");
-    });
-    syncWeaponSelectionState();
-  });
 
   fourStarToggleBtn.addEventListener("click", async () => {
     includeFourStarOptions = !includeFourStarOptions;
