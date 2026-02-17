@@ -101,6 +101,28 @@ body {
     border: 1px solid #383838;
     background-color: #1b1b1b;
     padding: 8px;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: #5d5d5d #1a1a1a;
+}
+
+.weapon-list::-webkit-scrollbar {
+    width: 10px;
+}
+
+.weapon-list::-webkit-scrollbar-track {
+    background: linear-gradient(180deg, #171717 0%, #1d1d1d 100%);
+    border-left: 1px solid #2a2a2a;
+}
+
+.weapon-list::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #6a6a6a 0%, #505050 100%);
+    border: 2px solid #1b1b1b;
+    border-radius: 999px;
+}
+
+.weapon-list::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #828282 0%, #666666 100%);
 }
 
 .weapon-item {
@@ -396,5 +418,4 @@ body {
         position: static;
     }
 }
-
 
