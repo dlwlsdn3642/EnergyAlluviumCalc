@@ -374,19 +374,6 @@ function createPlanResultMarkup({
 }) {
   const fixedLabel =
     bestPlan.fixedType === "additional" ? "추가 속성 고정" : "스킬 속성 고정";
-  const matchedWeaponCards = bestPlan.weapons
-    .map((weapon) =>
-      renderWeaponCard({
-        weaponName: weapon,
-        attributeText: resolveWeaponAttributeText(
-          weapon,
-          bestPlan.matchedOptions,
-          weaponMetaByName,
-        ),
-        imageName: weaponMetaByName[weapon]?.imageName,
-      }),
-    )
-    .join("");
 
   const matchedOptionItems = bestPlan.matchedOptions
     .map((option) => {
@@ -421,10 +408,6 @@ function createPlanResultMarkup({
         <p><strong>추천 고정:</strong> ${fixedLabel} - ${escapeHtml(bestPlan.fixedValue)}</p>
         <p><strong>중첩 유효옵:</strong> ${bestPlan.overlapCount}개</p>
         <p><strong>제외한 무기:</strong> ${excludedWeaponCount}개</p>
-        <div class="result-weapon-group">
-          <strong>해당 무기:</strong>
-          <div class="weapon-card-list">${matchedWeaponCards || '<span class="weapon-empty">없음</span>'}</div>
-        </div>
       </div>
     </div>
     <div class="matched-options">
@@ -434,18 +417,6 @@ function createPlanResultMarkup({
       </ul>
     </div>
   `;
-}
-
-function resolveWeaponAttributeText(weaponName, matchedOptions, weaponMetaByName) {
-  const matched = matchedOptions.find((option) =>
-    option.weapons.includes(weaponName),
-  );
-  if (matched) {
-    return `${matched.basic} / ${matched.additional} / ${matched.skill}`;
-  }
-
-  const fallback = weaponMetaByName[weaponName]?.options?.[0]?.text;
-  return fallback || "속성 정보 없음";
 }
 
 function renderWeaponCard({ weaponName, attributeText, imageName }) {
