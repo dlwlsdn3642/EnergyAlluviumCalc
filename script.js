@@ -2,9 +2,11 @@ import {
   loadGameData,
   loadIncludeFourStarFromCookie,
   loadShowUnownedOnlyFromCookie,
+  loadShowSignatureWeaponFromCookie,
   loadExcludedWeaponsFromCookie,
   saveIncludeFourStarToCookie,
   saveShowUnownedOnlyToCookie,
+  saveShowSignatureWeaponToCookie,
   saveExcludedWeaponsToCookie,
 } from "./data.js";
 import {
@@ -21,6 +23,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const weaponList = document.getElementById("weapon-list");
   const fourStarToggleBtn = document.getElementById("fourstar-toggle-btn");
   const unownedFilterBtn = document.getElementById("unowned-filter-btn");
+  const signatureWeaponToggleBtn = document.getElementById(
+    "signature-weapon-toggle-btn",
+  );
   const weaponSelectedCount = document.getElementById("weapon-selected-count");
 
   let dungeonData = [];
@@ -31,6 +36,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let persistedExcludedWeapons = loadExcludedWeaponsFromCookie();
   let includeFourStarOptions = loadIncludeFourStarFromCookie();
   let showUnownedOnly = loadShowUnownedOnlyFromCookie();
+  let showSignatureWeapon = loadShowSignatureWeaponFromCookie();
 
   statBoxes.forEach((box) => {
     box.addEventListener("click", function () {
@@ -54,6 +60,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   applyFourStarToggleState(fourStarToggleBtn, includeFourStarOptions);
   applyUnownedFilterToggleState(unownedFilterBtn, showUnownedOnly);
+  applySignatureWeaponToggleState(signatureWeaponToggleBtn, showSignatureWeapon);
+  applySignatureWeaponVisibility(showSignatureWeapon);
 
   async function refreshGameData() {
     const loadedData = await loadGameData(includeFourStarOptions);
@@ -105,6 +113,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     applyUnownedFilterToggleState(unownedFilterBtn, showUnownedOnly);
     saveShowUnownedOnlyToCookie(showUnownedOnly);
     updateWeaponVisibility();
+  });
+
+  signatureWeaponToggleBtn.addEventListener("click", () => {
+    showSignatureWeapon = !showSignatureWeapon;
+    applySignatureWeaponToggleState(signatureWeaponToggleBtn, showSignatureWeapon);
+    saveShowSignatureWeaponToCookie(showSignatureWeapon);
+    applySignatureWeaponVisibility(showSignatureWeapon);
   });
 
   calculateBtn.addEventListener("click", async () => {
@@ -244,6 +259,15 @@ function applyUnownedFilterToggleState(button, isEnabled) {
   button.setAttribute("aria-pressed", isEnabled ? "true" : "false");
 }
 
+function applySignatureWeaponToggleState(button, isEnabled) {
+  button.classList.toggle("is-active", isEnabled);
+  button.setAttribute("aria-pressed", isEnabled ? "true" : "false");
+}
+
+function applySignatureWeaponVisibility(isEnabled) {
+  document.body.classList.toggle("show-signature-weapon", isEnabled);
+}
+
 function renderWeaponFilter({
   weaponList,
   weaponSelectedCount,
@@ -281,6 +305,7 @@ function renderWeaponFilter({
       weaponName,
       attributeText,
       imageName: weaponMetaByName[weaponName]?.imageName,
+      signatureImageName: weaponMetaByName[weaponName]?.signatureImageName,
     });
 
     const weaponCard = item.firstElementChild;
@@ -385,6 +410,7 @@ function createPlanResultMarkup({
             weaponName: weapon,
             attributeText: optionAttributeText,
             imageName: weaponMetaByName[weapon]?.imageName,
+            signatureImageName: weaponMetaByName[weapon]?.signatureImageName,
           }),
         )
         .join("");
@@ -419,14 +445,24 @@ function createPlanResultMarkup({
   `;
 }
 
-function renderWeaponCard({ weaponName, attributeText, imageName }) {
+function renderWeaponCard({
+  weaponName,
+  attributeText,
+  imageName,
+  signatureImageName,
+}) {
   const imageHtml = imageName
     ? `<img src="data/weapon_images/${escapeHtml(imageName)}" alt="${escapeHtml(weaponName)}" class="weapon-card-image">`
     : '<div class="weapon-card-image weapon-card-image--placeholder" aria-hidden="true"></div>';
 
+  const characterIconHtml = signatureImageName
+    ? `<img src="data/characters/${escapeHtml(signatureImageName)}" alt="" aria-hidden="true" class="weapon-card-character-icon">`
+    : "";
+
   return `
     <div class="weapon-card">
       ${imageHtml}
+      ${characterIconHtml}
       <div class="weapon-card-text">
         <div class="weapon-card-name">${escapeHtml(weaponName)}</div>
         <div class="weapon-card-attrs">${escapeHtml(attributeText)}</div>

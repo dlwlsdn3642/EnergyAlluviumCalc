@@ -62,7 +62,8 @@ body {
 }
 
 #fourstar-toggle-btn,
-#unowned-filter-btn {
+#unowned-filter-btn,
+#signature-weapon-toggle-btn {
     border: 1px solid #5a5a5a;
     background: #262626;
     color: #f0f0f0;
@@ -72,7 +73,8 @@ body {
 }
 
 #fourstar-toggle-btn:hover,
-#unowned-filter-btn:hover {
+#unowned-filter-btn:hover,
+#signature-weapon-toggle-btn:hover {
     background: #323232;
 }
 
@@ -82,7 +84,8 @@ body {
     color: #ffe8c9;
 }
 
-#unowned-filter-btn.is-active {
+#unowned-filter-btn.is-active,
+#signature-weapon-toggle-btn.is-active {
     background: #143f4f;
     border-color: #4db6d8;
     color: #d7f4ff;
@@ -161,6 +164,11 @@ body {
 .weapon-card--compact .weapon-card-image {
     width: 44px;
     height: 44px;
+}
+
+.weapon-card--compact .weapon-card-character-icon {
+    width: 30px;
+    height: 30px;
 }
 
 .weapon-card--compact .weapon-card-name {
@@ -364,6 +372,20 @@ body {
     font-weight: 600;
     line-height: 1.25;
     word-break: keep-all;
+}
+
+.weapon-card-character-icon {
+    display: none;
+    width: 38px;
+    height: 38px;
+    object-fit: cover;
+    border: 1px solid #505050;
+    background: #1a1a1a;
+    flex-shrink: 0;
+}
+
+body.show-signature-weapon .weapon-card-character-icon {
+    display: block;
 }
 
 .weapon-card-attrs {

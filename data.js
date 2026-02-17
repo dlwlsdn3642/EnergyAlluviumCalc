@@ -3,6 +3,7 @@ import { normalizeBasicName } from "./planner.js";
 const WEAPON_FILTER_COOKIE = "excluded_weapons";
 const FOUR_STAR_OPTION_COOKIE = "include_4star_options";
 const UNOWNED_ONLY_COOKIE = "show_unowned_only";
+const SHOW_SIGNATURE_WEAPON_COOKIE = "show_signature_weapon";
 const COOKIE_EXPIRE_DAYS = 365;
 
 export async function loadGameData(includeFourStarOptions) {
@@ -63,6 +64,18 @@ export function saveShowUnownedOnlyToCookie(value) {
   ).toUTCString();
 
   document.cookie = `${UNOWNED_ONLY_COOKIE}=${value ? "1" : "0"}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+export function loadShowSignatureWeaponFromCookie() {
+  return getCookieValue(SHOW_SIGNATURE_WEAPON_COOKIE) === "1";
+}
+
+export function saveShowSignatureWeaponToCookie(value) {
+  const expires = new Date(
+    Date.now() + COOKIE_EXPIRE_DAYS * 24 * 60 * 60 * 1000,
+  ).toUTCString();
+
+  document.cookie = `${SHOW_SIGNATURE_WEAPON_COOKIE}=${value ? "1" : "0"}; expires=${expires}; path=/; SameSite=Lax`;
 }
 
 export function loadExcludedWeaponsFromCookie() {
@@ -168,8 +181,11 @@ function buildWeaponMetaByName(weapons) {
       })
       .filter(Boolean);
 
+    const signatureImageName = String(weapon?.signature_weapon || "").trim();
+
     metaByName[name] = {
       imageName: String(weapon?.image_name || "").trim(),
+      signatureImageName,
       options,
     };
   });
