@@ -538,5 +538,38 @@
         "skill": "사기"
       }
     ]
+  },
+  {
+    "name": "반항",
+    "image_name": "반항.webp",
+    "options": [
+      {
+        "basic": "민첩",
+        "additional": "공격력 증가",
+        "skill": "방출"
+      }
+    ]
+  },
+  {
+    "name": "찬란했던_기억",
+    "image_name": "찬란했던_기억.webp",
+    "options": [
+      {
+        "basic": "민첩",
+        "additional": "치명타 확률 증가",
+        "skill": "어둠"
+      }
+    ]
+  },
+  {
+    "name": "향수",
+    "image_name": "향수.webp",
+    "options": [
+      {
+        "basic": "민첩",
+        "additional": "냉기 피해 증가",
+        "skill": "억제"
+      }
+    ]
   }
 ]
