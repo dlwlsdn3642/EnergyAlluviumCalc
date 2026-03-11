@@ -223,11 +223,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     );
   }
 
+  function getRenderedWeapons() {
+    const items = weaponList.querySelectorAll(".weapon-item");
+    return new Set(
+      [...items]
+        .map((item) => item.dataset.weaponName || "")
+        .filter((name) => name),
+    );
+  }
+
   function syncWeaponSelectionState() {
     const excludedWeapons = getExcludedWeapons();
-    persistedExcludedWeapons = excludedWeapons;
-    saveExcludedWeaponsToCookie(excludedWeapons);
-    weaponSelectedCount.textContent = `${excludedWeapons.size}개 선택`;
+    const renderedWeapons = getRenderedWeapons();
+    const preservedHiddenSelections = [...persistedExcludedWeapons].filter(
+      (weaponName) => !renderedWeapons.has(weaponName),
+    );
+    const mergedExcludedWeapons = new Set([
+      ...preservedHiddenSelections,
+      ...excludedWeapons,
+    ]);
+
+    persistedExcludedWeapons = mergedExcludedWeapons;
+    saveExcludedWeaponsToCookie(mergedExcludedWeapons);
+    weaponSelectedCount.textContent = `${mergedExcludedWeapons.size}개 선택`;
     updateWeaponVisibility();
   }
 
