@@ -60,7 +60,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   applyFourStarToggleState(fourStarToggleBtn, includeFourStarOptions);
   applyUnownedFilterToggleState(unownedFilterBtn, showUnownedOnly);
-  applySignatureWeaponToggleState(signatureWeaponToggleBtn, showSignatureWeapon);
+  applySignatureWeaponToggleState(
+    signatureWeaponToggleBtn,
+    showSignatureWeapon,
+  );
   applySignatureWeaponVisibility(showSignatureWeapon);
 
   async function refreshGameData() {
@@ -117,13 +120,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   signatureWeaponToggleBtn.addEventListener("click", () => {
     showSignatureWeapon = !showSignatureWeapon;
-    applySignatureWeaponToggleState(signatureWeaponToggleBtn, showSignatureWeapon);
+    applySignatureWeaponToggleState(
+      signatureWeaponToggleBtn,
+      showSignatureWeapon,
+    );
     saveShowSignatureWeaponToCookie(showSignatureWeapon);
     applySignatureWeaponVisibility(showSignatureWeapon);
   });
 
   calculateBtn.addEventListener("click", async () => {
-    await runCalculation(5);
+    await runCalculation(Math.max(...dungeonData.map((d) => d.id)));
   });
 
   calculateCanyonBtn.addEventListener("click", async () => {
@@ -215,7 +221,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function getExcludedWeapons() {
-    const selectedItems = weaponList.querySelectorAll(".weapon-item.is-excluded");
+    const selectedItems = weaponList.querySelectorAll(
+      ".weapon-item.is-excluded",
+    );
     return new Set(
       [...selectedItems]
         .map((item) => item.dataset.weaponName || "")
@@ -420,8 +428,7 @@ function createPlanResultMarkup({
 
   const matchedOptionItems = bestPlan.matchedOptions
     .map((option) => {
-      const optionAttributeText =
-        `${option.basic} / ${option.additional} / ${option.skill}`;
+      const optionAttributeText = `${option.basic} / ${option.additional} / ${option.skill}`;
       const weaponCards = option.weapons
         .map((weapon) =>
           renderWeaponCard({
