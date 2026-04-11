@@ -596,5 +596,16 @@
         "skill": "억제"
       }
     ]
+  },
+  {
+    "name": "안개 속 불빛",
+    "image_name": "안개_속_불빛.webp",
+    "options": [
+      {
+        "basic": "의지",
+        "additional": "전기 피해 증가",
+        "skill": "효율"
+      }
+    ]
   }
 ]
