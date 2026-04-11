@@ -584,5 +584,17 @@
         "skill": "골절"
       }
     ]
+  },
+  {
+    "name": "고독한 나룻배",
+    "image_name": "고독한_나룻배.webp",
+    "signature_weapon": "장방이.webp",
+    "options": [
+      {
+        "basic": "의지",
+        "additional": "공격력 증가",
+        "skill": "억제"
+      }
+    ]
   }
 ]
