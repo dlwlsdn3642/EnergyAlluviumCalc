@@ -1,208 +1,124 @@
 import { normalizeBasicName } from "./planner.js";
 
-const WEAPON_FILTER_COOKIE = "excluded_weapons";
-const FOUR_STAR_OPTION_COOKIE = "include_4star_options";
-const UNOWNED_ONLY_COOKIE = "show_unowned_only";
-const SHOW_SIGNATURE_WEAPON_COOKIE = "show_signature_weapon";
-const COOKIE_EXPIRE_DAYS = 365;
+const COOKIES = {
+  WEAPON_FILTER: "excluded_weapons",
+  FOUR_STAR: "include_4star_options",
+  UNOWNED_ONLY: "show_unowned_only",
+  SHOW_SIGNATURE: "show_signature_weapon",
+};
 
-export async function loadGameData(includeFourStarOptions) {
+const setCookie = (name, value) => {
+  const expires = new Date(Date.now() + 365 * 86400000).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+};
+
+const getCookie = (name) => {
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : "";
+};
+
+const parseOption = (opt) => {
+  const basic = normalizeBasicName(opt?.basic);
+  const additional = String(
+    opt?.additional || opt?.additional_attributes || "",
+  ).trim();
+  const skill = String(opt?.skill || opt?.skill_attributes || "").trim();
+  return basic && additional && skill ? { basic, additional, skill } : null;
+};
+
+export const loadIncludeFourStar = () => getCookie(COOKIES.FOUR_STAR) === "1";
+export const saveIncludeFourStar = (v) =>
+  setCookie(COOKIES.FOUR_STAR, v ? "1" : "0");
+
+export const loadShowUnownedOnly = () =>
+  getCookie(COOKIES.UNOWNED_ONLY) === "1";
+export const saveShowUnownedOnly = (v) =>
+  setCookie(COOKIES.UNOWNED_ONLY, v ? "1" : "0");
+
+export const loadShowSignature = () =>
+  getCookie(COOKIES.SHOW_SIGNATURE) === "1";
+export const saveShowSignature = (v) =>
+  setCookie(COOKIES.SHOW_SIGNATURE, v ? "1" : "0");
+
+export function loadExcludedWeapons() {
   try {
-    const requests = [fetch("data/dungeon_data.json"), fetch("data/weapons.json")];
+    const parsed = JSON.parse(getCookie(COOKIES.WEAPON_FILTER));
+    return Array.isArray(parsed) ? new Set(parsed.map(String)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+export const saveExcludedWeapons = (set) =>
+  setCookie(COOKIES.WEAPON_FILTER, JSON.stringify([...set]));
 
-    if (includeFourStarOptions) {
-      requests.push(fetch("data/weapons_4star.json"));
-    }
+export async function loadGameData(includeFourStar) {
+  try {
+    const urls = ["data/dungeon_data.json", "data/weapons.json"];
+    if (includeFourStar) urls.push("data/weapons_4star.json");
 
-    const [dungeonResponse, weaponResponse, weapon4StarResponse] =
-      await Promise.all(requests);
+    const responses = await Promise.all(urls.map((url) => fetch(url)));
+    if (responses.some((r) => !r.ok)) throw new Error("데이터 파일 로딩 실패");
 
-    if (
-      !dungeonResponse.ok ||
-      !weaponResponse.ok ||
-      (includeFourStarOptions && !weapon4StarResponse?.ok)
-    ) {
-      throw new Error("데이터 파일 로딩 실패");
-    }
-
-    const dungeonData = await dungeonResponse.json();
-    const baseWeapons = await weaponResponse.json();
-    const mergedWeapons = includeFourStarOptions
-      ? baseWeapons.concat(await weapon4StarResponse.json())
+    const [dungeonData, baseWeapons, weapons4Star = []] = await Promise.all(
+      responses.map((r) => r.json()),
+    );
+    const mergedWeapons = includeFourStar
+      ? baseWeapons.concat(weapons4Star)
       : baseWeapons;
-    const optionData = normalizeOptionsFromWeapons(mergedWeapons);
-    const weaponMetaByName = buildWeaponMetaByName(mergedWeapons);
 
-    const commonEntry = dungeonData.find((entry) => entry.id === 0);
-    const commonBasics = commonEntry?.basic || [];
+    const commonBasics =
+      dungeonData.find((entry) => entry.id === 0)?.basic || [];
+    const { optionData, weaponMetaByName } = processWeapons(mergedWeapons);
 
     return { dungeonData, optionData, commonBasics, weaponMetaByName };
   } catch (error) {
+    console.error("Data load error:", error);
     return null;
   }
 }
 
-export function loadIncludeFourStarFromCookie() {
-  return getCookieValue(FOUR_STAR_OPTION_COOKIE) === "1";
-}
-
-export function saveIncludeFourStarToCookie(value) {
-  const expires = new Date(
-    Date.now() + COOKIE_EXPIRE_DAYS * 24 * 60 * 60 * 1000,
-  ).toUTCString();
-
-  document.cookie = `${FOUR_STAR_OPTION_COOKIE}=${value ? "1" : "0"}; expires=${expires}; path=/; SameSite=Lax`;
-}
-
-export function loadShowUnownedOnlyFromCookie() {
-  return getCookieValue(UNOWNED_ONLY_COOKIE) === "1";
-}
-
-export function saveShowUnownedOnlyToCookie(value) {
-  const expires = new Date(
-    Date.now() + COOKIE_EXPIRE_DAYS * 24 * 60 * 60 * 1000,
-  ).toUTCString();
-
-  document.cookie = `${UNOWNED_ONLY_COOKIE}=${value ? "1" : "0"}; expires=${expires}; path=/; SameSite=Lax`;
-}
-
-export function loadShowSignatureWeaponFromCookie() {
-  return getCookieValue(SHOW_SIGNATURE_WEAPON_COOKIE) === "1";
-}
-
-export function saveShowSignatureWeaponToCookie(value) {
-  const expires = new Date(
-    Date.now() + COOKIE_EXPIRE_DAYS * 24 * 60 * 60 * 1000,
-  ).toUTCString();
-
-  document.cookie = `${SHOW_SIGNATURE_WEAPON_COOKIE}=${value ? "1" : "0"}; expires=${expires}; path=/; SameSite=Lax`;
-}
-
-export function loadExcludedWeaponsFromCookie() {
-  const cookieValue = getCookieValue(WEAPON_FILTER_COOKIE);
-  if (!cookieValue) {
-    return new Set();
-  }
-
-  try {
-    const parsed = JSON.parse(cookieValue);
-    if (!Array.isArray(parsed)) {
-      return new Set();
-    }
-    return new Set(parsed.map((weapon) => String(weapon)));
-  } catch (error) {
-    return new Set();
-  }
-}
-
-export function saveExcludedWeaponsToCookie(weaponsSet) {
-  const expires = new Date(
-    Date.now() + COOKIE_EXPIRE_DAYS * 24 * 60 * 60 * 1000,
-  ).toUTCString();
-  const value = encodeURIComponent(JSON.stringify([...weaponsSet]));
-
-  document.cookie = `${WEAPON_FILTER_COOKIE}=${value}; expires=${expires}; path=/; SameSite=Lax`;
-}
-
-function normalizeOptionsFromWeapons(weapons) {
-  const groupedOptions = new Map();
-
-  weapons.forEach((weapon) => {
-    const weaponName = String(weapon?.name || "").trim();
-    const options = Array.isArray(weapon?.options) ? weapon.options : [];
-
-    options.forEach((option) => {
-      const basic = normalizeBasicName(option?.basic);
-      const additional = String(
-        option?.additional || option?.additional_attributes || "",
-      ).trim();
-      const skill = String(option?.skill || option?.skill_attributes || "").trim();
-
-      if (!weaponName || !basic || !additional || !skill) {
-        return;
-      }
-
-      const key = `${basic}\u0001${additional}\u0001${skill}`;
-      const current = groupedOptions.get(key);
-
-      if (!current) {
-        groupedOptions.set(key, {
-          basic,
-          additional,
-          skill,
-          weapons: [weaponName],
-        });
-        return;
-      }
-
-      if (!current.weapons.includes(weaponName)) {
-        current.weapons.push(weaponName);
-      }
-    });
-  });
-
-  return [...groupedOptions.values()].map((row, index) => ({
-    id: index,
-    basic: row.basic,
-    additional: row.additional,
-    skill: row.skill,
-    weapons: row.weapons,
-  }));
-}
-
-function buildWeaponMetaByName(weapons) {
-  const metaByName = {};
+function processWeapons(weapons) {
+  const weaponMetaByName = {};
+  const groupedMap = new Map();
 
   weapons.forEach((weapon) => {
     const name = String(weapon?.name || "").trim();
-    if (!name) {
-      return;
-    }
+    if (!name) return;
 
-    const rawOptions = Array.isArray(weapon?.options) ? weapon.options : [];
-    const options = rawOptions
-      .map((option) => {
-        const basic = normalizeBasicName(option?.basic);
-        const additional = String(
-          option?.additional || option?.additional_attributes || "",
-        ).trim();
-        const skill = String(option?.skill || option?.skill_attributes || "").trim();
-
-        if (!basic || !additional || !skill) {
-          return null;
-        }
-
-        return {
-          basic,
-          additional,
-          skill,
-          text: `${basic} / ${additional} / ${skill}`,
-        };
-      })
+    const options = (Array.isArray(weapon?.options) ? weapon.options : [])
+      .map(parseOption)
       .filter(Boolean);
 
-    const signatureImageName = String(weapon?.signature_weapon || "").trim();
-
-    metaByName[name] = {
+    weaponMetaByName[name] = {
       imageName: String(weapon?.image_name || "").trim(),
-      signatureImageName,
-      options,
+      signatureImageName: String(weapon?.signature_weapon || "").trim(),
+      options: options.map((opt) => ({
+        ...opt,
+        text: `${opt.basic} / ${opt.additional} / ${opt.skill}`,
+      })),
     };
+
+    options.forEach((opt) => {
+      const key = `${opt.basic}\u0001${opt.additional}\u0001${opt.skill}`;
+      if (!groupedMap.has(key)) {
+        groupedMap.set(key, {
+          basic: opt.basic,
+          additional: opt.additional,
+          skill: opt.skill,
+          weapons: new Set(),
+        });
+      }
+      groupedMap.get(key).weapons.add(name);
+    });
   });
 
-  return metaByName;
-}
+  const optionData = Array.from(groupedMap.values()).map((group, id) => ({
+    id,
+    basic: group.basic,
+    additional: group.additional,
+    skill: group.skill,
+    weapons: Array.from(group.weapons),
+  }));
 
-function getCookieValue(name) {
-  const encodedName = `${name}=`;
-  const cookieParts = document.cookie.split(";");
-
-  for (const rawPart of cookieParts) {
-    const part = rawPart.trim();
-    if (part.startsWith(encodedName)) {
-      return decodeURIComponent(part.substring(encodedName.length));
-    }
-  }
-
-  return "";
+  return { optionData, weaponMetaByName };
 }

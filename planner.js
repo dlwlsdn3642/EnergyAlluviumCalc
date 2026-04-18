@@ -1,114 +1,116 @@
 export function normalizeBasicName(basic) {
   const base = (basic || "").trim();
-  const basicMap = {
-    민첩: "민첩 증가",
-    "민첩 증가": "민첩 증가",
-    힘: "힘 증가",
-    "힘 증가": "힘 증가",
-    의지: "의지 증가",
-    "의지 증가": "의지 증가",
-    지능: "지능 증가",
-    "지능 증가": "지능 증가",
-    "주요 능력치": "주요 능력치 증가",
-    "주요 능력치 증가": "주요 능력치 증가",
-  };
-
-  return basicMap[base] || base;
+  const key = base.replace(" 증가", "");
+  return ["민첩", "힘", "의지", "지능", "주요 능력치"].includes(key)
+    ? `${key} 증가`
+    : base;
 }
 
 export function filterOptionsByExcludedWeapons(options, excludedWeapons) {
-  return options
-    .map((option) => {
-      const availableWeapons = option.weapons.filter(
-        (weapon) => !excludedWeapons.has(weapon),
-      );
-
-      if (availableWeapons.length === 0) {
-        return null;
-      }
-
-      return {
-        ...option,
-        weapons: availableWeapons,
-      };
-    })
-    .filter(Boolean);
+  return options.reduce((acc, opt) => {
+    const weapons = opt.weapons.filter((w) => !excludedWeapons.has(w));
+    if (weapons.length) acc.push({ ...opt, weapons });
+    return acc;
+  }, []);
 }
 
-export function findBestPlan({
-  selected,
-  dungeonData,
-  optionData,
-  commonBasics,
-  maxDungeonId = 5,
-}) {
-  const selectedBasic = normalizeBasicName(selected.basic);
-  const basicCombinations = createBasicCombinations(
-    commonBasics,
-    selectedBasic,
-  );
-  const dungeons = dungeonData.filter(
-    (entry) => entry.id >= 1 && entry.id <= maxDungeonId,
-  );
+const sortPlans = (a, b) =>
+  b.overlapCount - a.overlapCount ||
+  b.weaponCount - a.weaponCount ||
+  a.dungeon.id - b.dungeon.id ||
+  (a.fixedType === b.fixedType ? 0 : a.fixedType === "additional" ? -1 : 1);
 
-  let bestPlan = null;
+function chooseBetterPlan(current, candidate) {
+  return !current || sortPlans(candidate, current) < 0 ? candidate : current;
+}
+
+function createCombinations(basics, selected = null) {
+  const combos = [];
+  const targets = selected ? basics.filter((b) => b !== selected) : basics;
+
+  if (selected && !basics.includes(selected)) return combos;
+
+  for (let i = 0; i < targets.length; i += 1) {
+    for (let j = i + 1; j < targets.length; j += 1) {
+      if (selected) {
+        combos.push([selected, targets[i], targets[j]]);
+      } else {
+        for (let k = j + 1; k < targets.length; k += 1) {
+          combos.push([targets[i], targets[j], targets[k]]);
+        }
+      }
+    }
+  }
+  return combos;
+}
+
+function evaluatePlans({
+  dungeons,
+  optionData,
+  basicCombinations,
+  selAdd,
+  selSkill,
+}) {
+  const plans = [];
 
   dungeons.forEach((dungeon) => {
-    const hasSelectedAdditional = (
-      dungeon.additional_attributes || []
-    ).includes(selected.additional);
-    const hasSelectedSkill = (dungeon.skill_attributes || []).includes(
-      selected.skill,
-    );
+    const addSet = new Set(dungeon.additional_attributes || []);
+    const skillSet = new Set(dungeon.skill_attributes || []);
 
-    if (!hasSelectedAdditional || !hasSelectedSkill) {
+    const targetsAdd = selAdd
+      ? addSet.has(selAdd)
+        ? [selAdd]
+        : []
+      : [...addSet];
+    const targetsSkill = selSkill
+      ? skillSet.has(selSkill)
+        ? [selSkill]
+        : []
+      : [...skillSet];
+
+    if (selAdd && selSkill && (!targetsAdd.length || !targetsSkill.length))
       return;
-    }
+
+    let bestForDungeon = null;
 
     basicCombinations.forEach((basicSet) => {
-      const additionalFixedMatches = collectMatchedOptions({
-        normalizedOptions: optionData,
-        dungeon,
-        basicSet,
-        fixedType: "additional",
-        fixedValue: selected.additional,
-      });
-      const additionalWeapons = uniqueWeapons(additionalFixedMatches);
+      const basicPool = new Set(basicSet);
 
-      bestPlan = chooseBetterPlan(bestPlan, {
-        dungeon,
-        basicSet,
-        fixedType: "additional",
-        fixedValue: selected.additional,
-        matchedOptions: additionalFixedMatches,
-        overlapCount: additionalFixedMatches.length,
-        weapons: additionalWeapons,
-        weaponCount: additionalWeapons.length,
-      });
+      const check = (fixedType, values) => {
+        values.forEach((fixedValue) => {
+          const matched = optionData.filter(
+            (opt) =>
+              basicPool.has(opt.basic) &&
+              opt[fixedType] === fixedValue &&
+              (fixedType === "additional"
+                ? skillSet.has(opt.skill)
+                : addSet.has(opt.additional)),
+          );
 
-      const skillFixedMatches = collectMatchedOptions({
-        normalizedOptions: optionData,
-        dungeon,
-        basicSet,
-        fixedType: "skill",
-        fixedValue: selected.skill,
-      });
-      const skillWeapons = uniqueWeapons(skillFixedMatches);
+          if (!matched.length) return;
 
-      bestPlan = chooseBetterPlan(bestPlan, {
-        dungeon,
-        basicSet,
-        fixedType: "skill",
-        fixedValue: selected.skill,
-        matchedOptions: skillFixedMatches,
-        overlapCount: skillFixedMatches.length,
-        weapons: skillWeapons,
-        weaponCount: skillWeapons.length,
-      });
+          const weapons = [...new Set(matched.flatMap((o) => o.weapons))];
+          bestForDungeon = chooseBetterPlan(bestForDungeon, {
+            dungeon,
+            basicSet,
+            fixedType,
+            fixedValue,
+            matchedOptions: matched,
+            overlapCount: matched.length,
+            weapons,
+            weaponCount: weapons.length,
+          });
+        });
+      };
+
+      check("additional", targetsAdd);
+      check("skill", targetsSkill);
     });
+
+    if (bestForDungeon) plans.push(bestForDungeon);
   });
 
-  return bestPlan;
+  return plans;
 }
 
 export function findPlansByDungeon({
@@ -118,90 +120,19 @@ export function findPlansByDungeon({
   commonBasics,
   maxDungeonId = 5,
 }) {
-  const selectedBasic = normalizeBasicName(selected.basic);
-  const basicCombinations = createBasicCombinations(
+  const dungeons = dungeonData.filter((d) => d.id >= 1 && d.id <= maxDungeonId);
+  const basicCombinations = createCombinations(
     commonBasics,
-    selectedBasic,
-  );
-  const dungeons = dungeonData.filter(
-    (entry) => entry.id >= 1 && entry.id <= maxDungeonId,
+    normalizeBasicName(selected.basic),
   );
 
-  const plans = [];
-
-  dungeons.forEach((dungeon) => {
-    const hasSelectedAdditional = (
-      dungeon.additional_attributes || []
-    ).includes(selected.additional);
-    const hasSelectedSkill = (dungeon.skill_attributes || []).includes(
-      selected.skill,
-    );
-
-    if (!hasSelectedAdditional || !hasSelectedSkill) {
-      return;
-    }
-
-    let bestPlanForDungeon = null;
-
-    basicCombinations.forEach((basicSet) => {
-      const additionalFixedMatches = collectMatchedOptions({
-        normalizedOptions: optionData,
-        dungeon,
-        basicSet,
-        fixedType: "additional",
-        fixedValue: selected.additional,
-      });
-      const additionalWeapons = uniqueWeapons(additionalFixedMatches);
-
-      bestPlanForDungeon = chooseBetterPlan(bestPlanForDungeon, {
-        dungeon,
-        basicSet,
-        fixedType: "additional",
-        fixedValue: selected.additional,
-        matchedOptions: additionalFixedMatches,
-        overlapCount: additionalFixedMatches.length,
-        weapons: additionalWeapons,
-        weaponCount: additionalWeapons.length,
-      });
-
-      const skillFixedMatches = collectMatchedOptions({
-        normalizedOptions: optionData,
-        dungeon,
-        basicSet,
-        fixedType: "skill",
-        fixedValue: selected.skill,
-      });
-      const skillWeapons = uniqueWeapons(skillFixedMatches);
-
-      bestPlanForDungeon = chooseBetterPlan(bestPlanForDungeon, {
-        dungeon,
-        basicSet,
-        fixedType: "skill",
-        fixedValue: selected.skill,
-        matchedOptions: skillFixedMatches,
-        overlapCount: skillFixedMatches.length,
-        weapons: skillWeapons,
-        weaponCount: skillWeapons.length,
-      });
-    });
-
-    if (bestPlanForDungeon) {
-      plans.push(bestPlanForDungeon);
-    }
-  });
-
-  return plans.sort((a, b) => {
-    if (a.overlapCount !== b.overlapCount) {
-      return b.overlapCount - a.overlapCount;
-    }
-    if (a.weaponCount !== b.weaponCount) {
-      return b.weaponCount - a.weaponCount;
-    }
-    if (a.fixedType !== b.fixedType) {
-      return a.fixedType === "additional" ? -1 : 1;
-    }
-    return a.dungeon.id - b.dungeon.id;
-  });
+  return evaluatePlans({
+    dungeons,
+    optionData,
+    basicCombinations,
+    selAdd: selected.additional,
+    selSkill: selected.skill,
+  }).sort(sortPlans);
 }
 
 export function findBestPlanWithoutSelection({
@@ -210,148 +141,12 @@ export function findBestPlanWithoutSelection({
   commonBasics,
   maxDungeonId = 5,
 }) {
-  const basicCombinations = createAllBasicCombinations(commonBasics);
-  const dungeons = dungeonData.filter(
-    (entry) => entry.id >= 1 && entry.id <= maxDungeonId,
+  const dungeons = dungeonData.filter((d) => d.id >= 1 && d.id <= maxDungeonId);
+  const basicCombinations = createCombinations(commonBasics);
+
+  return (
+    evaluatePlans({ dungeons, optionData, basicCombinations }).sort(
+      sortPlans,
+    )[0] || null
   );
-
-  let bestPlan = null;
-
-  dungeons.forEach((dungeon) => {
-    basicCombinations.forEach((basicSet) => {
-      (dungeon.additional_attributes || []).forEach((additionalValue) => {
-        const additionalFixedMatches = collectMatchedOptions({
-          normalizedOptions: optionData,
-          dungeon,
-          basicSet,
-          fixedType: "additional",
-          fixedValue: additionalValue,
-        });
-        const additionalWeapons = uniqueWeapons(additionalFixedMatches);
-
-        bestPlan = chooseBetterPlan(bestPlan, {
-          dungeon,
-          basicSet,
-          fixedType: "additional",
-          fixedValue: additionalValue,
-          matchedOptions: additionalFixedMatches,
-          overlapCount: additionalFixedMatches.length,
-          weapons: additionalWeapons,
-          weaponCount: additionalWeapons.length,
-        });
-      });
-
-      (dungeon.skill_attributes || []).forEach((skillValue) => {
-        const skillFixedMatches = collectMatchedOptions({
-          normalizedOptions: optionData,
-          dungeon,
-          basicSet,
-          fixedType: "skill",
-          fixedValue: skillValue,
-        });
-        const skillWeapons = uniqueWeapons(skillFixedMatches);
-
-        bestPlan = chooseBetterPlan(bestPlan, {
-          dungeon,
-          basicSet,
-          fixedType: "skill",
-          fixedValue: skillValue,
-          matchedOptions: skillFixedMatches,
-          overlapCount: skillFixedMatches.length,
-          weapons: skillWeapons,
-          weaponCount: skillWeapons.length,
-        });
-      });
-    });
-  });
-
-  return bestPlan;
-}
-
-function createBasicCombinations(commonBasics, selectedBasic) {
-  if (!commonBasics.includes(selectedBasic)) {
-    return [];
-  }
-
-  const others = commonBasics.filter((value) => value !== selectedBasic);
-  const combinations = [];
-
-  for (let i = 0; i < others.length; i += 1) {
-    for (let j = i + 1; j < others.length; j += 1) {
-      combinations.push([selectedBasic, others[i], others[j]]);
-    }
-  }
-
-  return combinations;
-}
-
-function createAllBasicCombinations(commonBasics) {
-  const combinations = [];
-
-  for (let i = 0; i < commonBasics.length; i += 1) {
-    for (let j = i + 1; j < commonBasics.length; j += 1) {
-      for (let k = j + 1; k < commonBasics.length; k += 1) {
-        combinations.push([commonBasics[i], commonBasics[j], commonBasics[k]]);
-      }
-    }
-  }
-
-  return combinations;
-}
-
-function collectMatchedOptions({
-  normalizedOptions,
-  dungeon,
-  basicSet,
-  fixedType,
-  fixedValue,
-}) {
-  const basicPool = new Set(basicSet);
-
-  if (fixedType === "additional") {
-    const skillPool = new Set(dungeon.skill_attributes || []);
-    return normalizedOptions.filter(
-      (option) =>
-        basicPool.has(option.basic) &&
-        option.additional === fixedValue &&
-        skillPool.has(option.skill),
-    );
-  }
-
-  const additionalPool = new Set(dungeon.additional_attributes || []);
-  return normalizedOptions.filter(
-    (option) =>
-      basicPool.has(option.basic) &&
-      option.skill === fixedValue &&
-      additionalPool.has(option.additional),
-  );
-}
-
-function uniqueWeapons(matchedOptions) {
-  const merged = matchedOptions.flatMap((option) => option.weapons);
-  return [...new Set(merged)];
-}
-
-function chooseBetterPlan(current, candidate) {
-  if (!current) {
-    return candidate;
-  }
-
-  if (candidate.overlapCount !== current.overlapCount) {
-    return candidate.overlapCount > current.overlapCount ? candidate : current;
-  }
-
-  if (candidate.weaponCount !== current.weaponCount) {
-    return candidate.weaponCount > current.weaponCount ? candidate : current;
-  }
-
-  if (candidate.dungeon.id !== current.dungeon.id) {
-    return candidate.dungeon.id < current.dungeon.id ? candidate : current;
-  }
-
-  if (candidate.fixedType !== current.fixedType) {
-    return candidate.fixedType === "additional" ? candidate : current;
-  }
-
-  return current;
 }

@@ -39,7 +39,7 @@
     "options": [
       {
         "basic": "힘",
-        "additional": "궁극기 획득 효율 증가",
+        "additional": "궁극기 충전 효율 증가",
         "skill": "잔혹"
       }
     ]
@@ -316,7 +316,7 @@
     "options": [
       {
         "basic": "민첩",
-        "additional": "궁극기 획득 효율 증가",
+        "additional": "궁극기 충전 효율 증가",
         "skill": "방출"
       }
     ]
@@ -339,7 +339,7 @@
     "options": [
       {
         "basic": "힘",
-        "additional": "궁극기 획득 효율 증가",
+        "additional": "궁극기 충전 효율 증가",
         "skill": "방출"
       }
     ]
@@ -500,7 +500,7 @@
     "options": [
       {
         "basic": "의지",
-        "additional": "궁극기 획득 효율 증가",
+        "additional": "궁극기 충전 효율 증가",
         "skill": "추격"
       }
     ]
@@ -523,7 +523,7 @@
     "options": [
       {
         "basic": "의지",
-        "additional": "궁극기 획득 효율 증가",
+        "additional": "궁극기 충전 효율 증가",
         "skill": "사기"
       }
     ]
@@ -534,7 +534,7 @@
     "options": [
       {
         "basic": "지능",
-        "additional": "궁극기 획득 효율 증가",
+        "additional": "궁극기 충전 효율 증가",
         "skill": "사기"
       }
     ]
