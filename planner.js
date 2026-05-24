@@ -20,8 +20,55 @@ const sortPlans = (a, b) =>
   a.dungeon.id - b.dungeon.id ||
   (a.fixedType === b.fixedType ? 0 : a.fixedType === "additional" ? -1 : 1);
 
+const sortDisplayPlans = (a, b) =>
+  b.weaponCount - a.weaponCount || sortPlans(a, b);
+
+// "4번 협곡"은 단일 id 4 던전이 아니라 id 1~4 던전 그룹을 뜻한다.
+const isCanyonDungeon = (dungeon) => dungeon.id >= 1 && dungeon.id <= 4;
+
 function chooseBetterPlan(current, candidate) {
   return !current || sortPlans(candidate, current) < 0 ? candidate : current;
+}
+
+function choosePreferredFarmSpot(current, candidate) {
+  if (!current) return candidate;
+  const currentIsCanyon = isCanyonDungeon(current.dungeon);
+  const candidateIsCanyon = isCanyonDungeon(candidate.dungeon);
+  if (candidateIsCanyon && !currentIsCanyon) return candidate;
+  if (currentIsCanyon && !candidateIsCanyon) return current;
+  return chooseBetterPlan(current, candidate);
+}
+
+function getWeaponCombinationKey(plan) {
+  return [...plan.weapons]
+    .sort((a, b) => a.localeCompare(b, "ko"))
+    .join("\u0001");
+}
+
+function uniquePlansByWeaponCombination(plans) {
+  const bestByCombination = new Map();
+
+  plans.forEach((plan) => {
+    if (!plan.weapons.length) return;
+    const key = getWeaponCombinationKey(plan);
+    bestByCombination.set(
+      key,
+      choosePreferredFarmSpot(bestByCombination.get(key), plan),
+    );
+  });
+
+  const uniquePlans = [...bestByCombination.values()];
+  const coFarmedWeapons = new Set(
+    uniquePlans
+      .filter((plan) => plan.weaponCount > 1)
+      .flatMap((plan) => plan.weapons),
+  );
+
+  return uniquePlans
+    .filter(
+      (plan) => plan.weaponCount > 1 || !coFarmedWeapons.has(plan.weapons[0]),
+    )
+    .sort(sortDisplayPlans);
 }
 
 function createCombinations(basics, selected = null) {
@@ -44,12 +91,30 @@ function createCombinations(basics, selected = null) {
   return combos;
 }
 
+function createSearchScope({
+  selected,
+  dungeonData,
+  commonBasics,
+  maxDungeonId,
+}) {
+  const selectedBasic = selected?.basic
+    ? normalizeBasicName(selected.basic)
+    : null;
+
+  return {
+    dungeons: dungeonData.filter((d) => d.id >= 1 && d.id <= maxDungeonId),
+    basicCombinations: createCombinations(commonBasics, selectedBasic),
+    selectedAdditional: selected?.additional || null,
+    selectedSkill: selected?.skill || null,
+  };
+}
+
 function evaluatePlans({
   dungeons,
   optionData,
   basicCombinations,
-  selAdd,
-  selSkill,
+  selectedAdditional,
+  selectedSkill,
 }) {
   const plans = [];
 
@@ -57,21 +122,23 @@ function evaluatePlans({
     const addSet = new Set(dungeon.additional_attributes || []);
     const skillSet = new Set(dungeon.skill_attributes || []);
 
-    const targetsAdd = selAdd
-      ? addSet.has(selAdd)
-        ? [selAdd]
+    const targetsAdd = selectedAdditional
+      ? addSet.has(selectedAdditional)
+        ? [selectedAdditional]
         : []
       : [...addSet];
-    const targetsSkill = selSkill
-      ? skillSet.has(selSkill)
-        ? [selSkill]
+    const targetsSkill = selectedSkill
+      ? skillSet.has(selectedSkill)
+        ? [selectedSkill]
         : []
       : [...skillSet];
 
-    if (selAdd && selSkill && (!targetsAdd.length || !targetsSkill.length))
+    if (
+      selectedAdditional &&
+      selectedSkill &&
+      (!targetsAdd.length || !targetsSkill.length)
+    )
       return;
-
-    let bestForDungeon = null;
 
     basicCombinations.forEach((basicSet) => {
       const basicPool = new Set(basicSet);
@@ -90,7 +157,7 @@ function evaluatePlans({
           if (!matched.length) return;
 
           const weapons = [...new Set(matched.flatMap((o) => o.weapons))];
-          bestForDungeon = chooseBetterPlan(bestForDungeon, {
+          plans.push({
             dungeon,
             basicSet,
             fixedType,
@@ -106,47 +173,32 @@ function evaluatePlans({
       check("additional", targetsAdd);
       check("skill", targetsSkill);
     });
-
-    if (bestForDungeon) plans.push(bestForDungeon);
   });
 
   return plans;
 }
 
-export function findPlansByDungeon({
-  selected,
+export function findPlans({
+  selected = null,
   dungeonData,
   optionData,
   commonBasics,
   maxDungeonId = 5,
 }) {
-  const dungeons = dungeonData.filter((d) => d.id >= 1 && d.id <= maxDungeonId);
-  const basicCombinations = createCombinations(
+  const scope = createSearchScope({
+    selected,
+    dungeonData,
     commonBasics,
-    normalizeBasicName(selected.basic),
-  );
+    maxDungeonId,
+  });
 
-  return evaluatePlans({
-    dungeons,
-    optionData,
-    basicCombinations,
-    selAdd: selected.additional,
-    selSkill: selected.skill,
-  }).sort(sortPlans);
-}
-
-export function findBestPlanWithoutSelection({
-  dungeonData,
-  optionData,
-  commonBasics,
-  maxDungeonId = 5,
-}) {
-  const dungeons = dungeonData.filter((d) => d.id >= 1 && d.id <= maxDungeonId);
-  const basicCombinations = createCombinations(commonBasics);
-
-  return (
-    evaluatePlans({ dungeons, optionData, basicCombinations }).sort(
-      sortPlans,
-    )[0] || null
+  return uniquePlansByWeaponCombination(
+    evaluatePlans({
+      dungeons: scope.dungeons,
+      optionData,
+      basicCombinations: scope.basicCombinations,
+      selectedAdditional: scope.selectedAdditional,
+      selectedSkill: scope.selectedSkill,
+    }),
   );
 }

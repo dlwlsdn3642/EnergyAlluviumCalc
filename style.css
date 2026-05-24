@@ -49,16 +49,10 @@ body {
 
 .weapon-toolbar {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.weapon-toolbar-left {
-    display: flex;
     align-items: center;
     gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
 }
 
 #fourstar-toggle-btn,
@@ -89,11 +83,6 @@ body {
     background: #143f4f;
     border-color: #4db6d8;
     color: #d7f4ff;
-}
-
-.weapon-selected-count {
-    font-size: 0.85rem;
-    color: #b7b7b7;
 }
 
 .weapon-list {
@@ -309,6 +298,16 @@ body {
     grid-template-columns: 130px 1fr;
     gap: 16px;
     align-items: start;
+    cursor: pointer;
+}
+
+.result-card:focus-visible {
+    outline: 1px solid #9b9b9b;
+    outline-offset: 4px;
+}
+
+.result-card.is-collapsed {
+    opacity: 0.86;
 }
 
 .dungeon-box {
@@ -406,6 +405,10 @@ body.show-signature-weapon .weapon-card-character-icon {
     padding-top: 12px;
 }
 
+.matched-options.is-collapsed {
+    display: none;
+}
+
 .matched-title {
     color: #f0f0f0;
     font-weight: 600;
@@ -423,6 +426,11 @@ body.show-signature-weapon .weapon-card-character-icon {
     background-color: #242424;
     padding: 8px 10px;
     margin-bottom: 8px;
+}
+
+.matched-options .grouped-plan-options {
+    margin-top: 8px;
+    padding-left: 16px;
 }
 
 .option-line {

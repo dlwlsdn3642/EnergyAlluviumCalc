@@ -11,8 +11,7 @@ import {
 } from "./data.js";
 import {
   filterOptionsByExcludedWeapons,
-  findPlansByDungeon,
-  findBestPlanWithoutSelection,
+  findPlans,
 } from "./planner.js";
 
 const state = {
@@ -37,7 +36,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     "calculate-canyon-btn",
     "result-content",
     "weapon-list",
-    "weapon-selected-count",
   ].forEach((id) => (DOM[id] = document.getElementById(id)));
 
   initStatBoxes();
@@ -74,11 +72,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   DOM["calculate-btn"].addEventListener("click", () =>
     runCalculation(Math.max(...state.data.dungeonData.map((d) => d.id))),
   );
+  // "4번 협곡" 버튼은 id 1~4 던전 그룹만 대상으로 계산한다.
   DOM["calculate-canyon-btn"].addEventListener("click", () =>
     runCalculation(4),
   );
 
   setupWeaponListDelegation();
+  setupResultToggleDelegation();
 
   if (!(await refreshData())) renderLoadFailure();
 });
@@ -101,12 +101,8 @@ async function runCalculation(maxDungeonId) {
     return;
   }
 
-  const sel = {
-    basic: getSelected("basic"),
-    additional: getSelected("additional"),
-    skill: getSelected("skill"),
-  };
-  const selectedCount = Object.values(sel).filter(Boolean).length;
+  const selection = getAttributeSelection();
+  const selectedCount = countSelectedAttributes(selection);
 
   if (selectedCount !== 3 && selectedCount !== 0) {
     DOM["result-content"].textContent =
@@ -127,25 +123,61 @@ async function runCalculation(maxDungeonId) {
     maxDungeonId,
   };
 
-  if (selectedCount === 0) {
-    const bestPlan = findBestPlanWithoutSelection(commonArgs);
-    if (!bestPlan || !bestPlan.overlapCount) return renderEmptyResult();
-    DOM["result-content"].innerHTML = createPlanResultMarkup(
-      bestPlan,
-      weaponMetaByName,
-    );
-    return;
-  }
-
-  const plans = findPlansByDungeon({ selected: sel, ...commonArgs });
+  const plans = findPlans({
+    selected: selectedCount ? selection : null,
+    ...commonArgs,
+  });
   if (!plans.length) return renderEmptyResult();
 
-  DOM["result-content"].innerHTML = `
-    <p class="result-list-summary">선택한 3옵이 나오는 던전 ${plans.length}개를 중첩 유효옵 순으로 정렬했습니다.</p>
+  DOM["result-content"].innerHTML = createPlanListMarkup(
+    plans,
+    weaponMetaByName,
+    createResultSummary(plans.length, selectedCount),
+  );
+}
+
+function getAttributeSelection() {
+  return {
+    basic: getSelected("basic"),
+    additional: getSelected("additional"),
+    skill: getSelected("skill"),
+  };
+}
+
+const countSelectedAttributes = (selection) =>
+  Object.values(selection).filter(Boolean).length;
+
+function createResultSummary(planCount, selectedCount) {
+  return selectedCount
+    ? `선택한 3옵이 나오는 후보 ${planCount}개를 중첩 효율 순으로 정렬했습니다.`
+    : `선택한 속성 없이 후보 ${planCount}개를 중첩 효율 순으로 정렬했습니다.`;
+}
+
+function createPlanListMarkup(plans, weaponMetaByName, summary) {
+  const groups = groupPlansByDungeon(plans);
+  return `
+    <p class="result-list-summary">${escapeHtml(summary)} 같은 던전 후보는 묶어서 표시합니다.</p>
     <div class="result-list">
-      ${plans.map((p, i) => `<div class="result-list-item"><div class="result-list-rank">#${i + 1}</div>${createPlanResultMarkup(p, weaponMetaByName)}</div>`).join("")}
+      ${groups.map((g, i) => `<div class="result-list-item"><div class="result-list-rank">#${i + 1}</div>${createDungeonGroupMarkup(g, weaponMetaByName)}</div>`).join("")}
     </div>
   `;
+}
+
+function groupPlansByDungeon(plans) {
+  const groups = [];
+  const groupByDungeonId = new Map();
+
+  plans.forEach((plan) => {
+    const key = plan.dungeon.id;
+    if (!groupByDungeonId.has(key)) {
+      const group = { dungeon: plan.dungeon, plans: [] };
+      groupByDungeonId.set(key, group);
+      groups.push(group);
+    }
+    groupByDungeonId.get(key).plans.push(plan);
+  });
+
+  return groups;
 }
 
 function initStatBoxes() {
@@ -192,6 +224,30 @@ function setupWeaponListDelegation() {
   });
 }
 
+function setupResultToggleDelegation() {
+  const toggleDetails = (card) => {
+    const details = card.nextElementSibling;
+    if (!details?.classList.contains("matched-options")) return;
+    const isCollapsed = details.classList.toggle("is-collapsed");
+    details.hidden = isCollapsed;
+    card.classList.toggle("is-collapsed", isCollapsed);
+    card.setAttribute("aria-expanded", String(!isCollapsed));
+  };
+
+  DOM["result-content"].addEventListener("click", (e) => {
+    const card = e.target.closest(".result-card");
+    if (card && DOM["result-content"].contains(card)) toggleDetails(card);
+  });
+
+  DOM["result-content"].addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const card = e.target.closest(".result-card");
+    if (!card || !DOM["result-content"].contains(card)) return;
+    e.preventDefault();
+    toggleDetails(card);
+  });
+}
+
 function renderWeaponFilter() {
   const { optionData, weaponMetaByName } = state.data;
   const allWeapons = [...new Set(optionData.flatMap((r) => r.weapons))]
@@ -200,7 +256,6 @@ function renderWeaponFilter() {
 
   if (!allWeapons.length) {
     DOM["weapon-list"].textContent = "표시할 무기 목록이 없습니다.";
-    DOM["weapon-selected-count"].textContent = "0개 선택";
     return;
   }
 
@@ -234,7 +289,6 @@ function syncSelections() {
   state.excluded = new Set([...hiddenExcluded, ...currentExcluded]);
 
   saveExcludedWeapons(state.excluded);
-  DOM["weapon-selected-count"].textContent = `${state.excluded.size}개 선택`;
   updateWeaponVisibility();
 }
 
@@ -247,8 +301,8 @@ function updateWeaponVisibility() {
   });
 }
 
-function createPlanResultMarkup(plan, weaponMeta) {
-  const matchHtml = plan.matchedOptions
+function createMatchedOptionItems(plan, weaponMeta) {
+  return plan.matchedOptions
     .map(
       (o) => `
     <li>
@@ -271,9 +325,45 @@ function createPlanResultMarkup(plan, weaponMeta) {
   `,
     )
     .join("");
+}
 
+function createPlanDetailMarkup(plan, weaponMeta) {
   return `
-    <div class="result-card">
+    <li>
+      <div class="matched-title">중첩 유효옵: ${plan.overlapCount}개</div>
+      <ul class="grouped-plan-options">${createMatchedOptionItems(plan, weaponMeta)}</ul>
+    </li>
+  `;
+}
+
+function createDungeonGroupMarkup(group, weaponMeta) {
+  if (group.plans.length === 1) {
+    return createPlanResultMarkup(group.plans[0], weaponMeta);
+  }
+
+  const maxOverlapCount = Math.max(...group.plans.map((p) => p.overlapCount));
+  const maxWeaponCount = Math.max(...group.plans.map((p) => p.weaponCount));
+  return `
+    <div class="result-card" role="button" tabindex="0" aria-expanded="true">
+      <div class="dungeon-box">
+        <img src="data/dungeon_images/${escapeHtml(group.dungeon.image_name)}" alt="${escapeHtml(group.dungeon.name)}" class="dungeon-image">
+        <div class="dungeon-title">${escapeHtml(group.dungeon.name)}</div>
+      </div>
+      <div class="result-summary">
+        <p><strong>파밍 후보:</strong> ${group.plans.length}개</p>
+        <p><strong>최대 동시 파밍:</strong> ${maxWeaponCount}개 무기</p>
+        <p><strong>최대 중첩 유효옵:</strong> ${maxOverlapCount}개</p>
+        <p><strong>제외한 무기:</strong> ${state.excluded.size}개</p>
+      </div>
+    </div>
+    <div class="matched-options"><ul>${group.plans.map((plan) => createPlanDetailMarkup(plan, weaponMeta)).join("")}</ul></div>
+  `;
+}
+
+function createPlanResultMarkup(plan, weaponMeta) {
+  const matchHtml = createMatchedOptionItems(plan, weaponMeta);
+  return `
+    <div class="result-card" role="button" tabindex="0" aria-expanded="true">
       <div class="dungeon-box">
         <img src="data/dungeon_images/${escapeHtml(plan.dungeon.image_name)}" alt="${escapeHtml(plan.dungeon.name)}" class="dungeon-image">
         <div class="dungeon-title">${escapeHtml(plan.dungeon.name)}</div>
@@ -285,7 +375,7 @@ function createPlanResultMarkup(plan, weaponMeta) {
         <p><strong>제외한 무기:</strong> ${state.excluded.size}개</p>
       </div>
     </div>
-    <div class="matched-options"><div class="matched-title">중첩 유효옵 상세</div><ul>${matchHtml}</ul></div>
+    <div class="matched-options"><div class="matched-title">중첩 유효옵: ${plan.overlapCount}개</div><ul>${matchHtml}</ul></div>
   `;
 }
 
