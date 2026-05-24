@@ -332,7 +332,7 @@ function createPlanDetailMarkup(plan, weaponMeta) {
     <li>
       <div class="grouped-plan-summary">
         <span><strong>기본 3옵:</strong> ${plan.basicSet.map(escapeHtml).join(", ")}</span>
-        <span><strong>고정:</strong> ${plan.fixedType === "additional" ? "추가" : "스킬"} 속성 고정 - ${escapeHtml(plan.fixedValue)}</span>
+        <span><strong>${plan.fixedType === "additional" ? "추가" : "스킬"} 속성:</strong> ${escapeHtml(plan.fixedValue)}</span>
         <span><strong>개수:</strong> ${plan.overlapCount}개</span>
       </div>
       <ul class="grouped-plan-options">${createMatchedOptionItems(plan, weaponMeta)}</ul>
