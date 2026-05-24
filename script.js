@@ -34,6 +34,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   [
     "calculate-btn",
     "calculate-canyon-btn",
+    "collection-export-btn",
+    "collection-import-btn",
+    "collection-import-input",
     "result-content",
     "weapon-list",
   ].forEach((id) => (DOM[id] = document.getElementById(id)));
@@ -76,6 +79,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   DOM["calculate-canyon-btn"].addEventListener("click", () =>
     runCalculation(4),
   );
+  DOM["collection-export-btn"].addEventListener("click", exportCollectionJson);
+  DOM["collection-import-btn"].addEventListener("click", () =>
+    DOM["collection-import-input"].click(),
+  );
+  DOM["collection-import-input"].addEventListener("change", importCollectionJson);
 
   setupWeaponListDelegation();
   setupResultToggleDelegation();
@@ -93,6 +101,86 @@ async function refreshData() {
   state.isLoaded = true;
   renderWeaponFilter();
   return true;
+}
+
+async function loadBaseWeaponNames() {
+  const response = await fetch("data/weapons.json");
+  if (!response.ok) throw new Error("weapons.json load failed");
+  const weapons = await response.json();
+  return weapons
+    .map((weapon) => String(weapon?.name || "").trim())
+    .filter(Boolean);
+}
+
+function createCollectionPayload(baseWeaponNames) {
+  return {
+    version: 1,
+    owned: baseWeaponNames.filter((name) => state.excluded.has(name)),
+    savedAt: new Date().toISOString(),
+  };
+}
+
+function getCollectionFileName() {
+  return `owned_weapons_${Math.floor(Date.now() / 60000)}.json`;
+}
+
+async function exportCollectionJson() {
+  try {
+    const baseWeaponNames = await loadBaseWeaponNames();
+    const payload = createCollectionPayload(baseWeaponNames);
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = getCollectionFileName();
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Collection export failed:", error);
+    DOM["result-content"].textContent =
+      "보유 목록 JSON 출력에 실패했습니다. 데이터를 다시 불러온 뒤 시도해주세요.";
+  }
+}
+
+function parseOwnedWeaponNames(payload) {
+  const list = payload?.owned || payload;
+
+  if (!Array.isArray(list)) {
+    throw new Error("Collection JSON must contain an owned weapon name array.");
+  }
+
+  return new Set(list.map((name) => String(name).trim()).filter(Boolean));
+}
+
+async function importCollectionJson(event) {
+  const file = event.target.files?.[0];
+  event.target.value = "";
+  if (!file) return;
+
+  try {
+    const payload = JSON.parse(await file.text());
+    const ownedWeapons = parseOwnedWeaponNames(payload);
+    const baseWeaponNames = await loadBaseWeaponNames();
+    const validWeaponNames = new Set(baseWeaponNames);
+    const validOwnedWeapons = new Set(
+      [...ownedWeapons].filter((name) => validWeaponNames.has(name)),
+    );
+    const preservedExcluded = [...state.excluded].filter(
+      (name) => !validWeaponNames.has(name),
+    );
+
+    state.excluded = new Set([...preservedExcluded, ...validOwnedWeapons]);
+    saveExcludedWeapons(state.excluded);
+    renderWeaponFilter();
+    DOM["result-content"].textContent =
+      `보유 목록 JSON을 입력했습니다. 5성 무기 ${validOwnedWeapons.size}개를 보유로 반영했습니다.`;
+  } catch (error) {
+    console.error("Collection import failed:", error);
+    DOM["result-content"].textContent =
+      "보유 목록 JSON 입력에 실패했습니다. 파일 양식과 무기 이름을 확인해주세요.";
+  }
 }
 
 async function runCalculation(maxDungeonId) {

@@ -24,9 +24,9 @@ body {
 
 .app-layout {
     width: 100%;
-    max-width: 1250px;
+    max-width: 1300px;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 380px;
+    grid-template-columns: minmax(0, 1fr) 400px;
     gap: 20px;
 }
 
@@ -55,9 +55,17 @@ body {
     flex-wrap: wrap;
 }
 
+.weapon-toolbar-break {
+    flex-basis: 100%;
+    display: flex;
+    gap: 8px;
+}
+
 #fourstar-toggle-btn,
 #unowned-filter-btn,
-#signature-weapon-toggle-btn {
+#signature-weapon-toggle-btn,
+#collection-export-btn,
+#collection-import-btn {
     border: 1px solid #5a5a5a;
     background: #262626;
     color: #f0f0f0;
@@ -68,7 +76,9 @@ body {
 
 #fourstar-toggle-btn:hover,
 #unowned-filter-btn:hover,
-#signature-weapon-toggle-btn:hover {
+#signature-weapon-toggle-btn:hover,
+#collection-export-btn:hover,
+#collection-import-btn:hover {
     background: #323232;
 }
 

@@ -69,7 +69,7 @@
     ]
   },
   {
-    "name": "작품 중생",
+    "name": "작품: 중생",
     "image_name": "작품_중생.webp",
     "options": [
       {
@@ -80,7 +80,7 @@
     ]
   },
   {
-    "name": "obj 스파이크",
+    "name": "O.B.J. 스파이크",
     "image_name": "obj_스파이크.webp",
     "signature_weapon": "에스텔라.webp",
     "options": [
@@ -171,7 +171,7 @@
     ]
   },
   {
-    "name": "obj 엣지 오브 라이트",
+    "name": "O.B.J. 엣지 오브 라이트",
     "image_name": "obj_엣지_오브_라이트.webp",
     "signature_weapon": "아케쿠리.webp",
     "options": [
@@ -310,7 +310,7 @@
     ]
   },
   {
-    "name": "obj벨로시투스",
+    "name": "O.B.J. 벨로시투스",
     "image_name": "obj벨로시투스.webp",
     "signature_weapon": "플루라이트.webp",
     "options": [
@@ -356,7 +356,7 @@
     ]
   },
   {
-    "name": "린수를 찾아서",
+    "name": "린수를 찾아서 3.0",
     "image_name": "린수를_찾아서.webp",
     "signature_weapon": "알레쉬.webp",
     "options": [
@@ -368,7 +368,7 @@
     ]
   },
   {
-    "name": "작품 침식 흔적",
+    "name": "작품: 침식 흔적",
     "image_name": "작품_침식_흔적.webp",
     "options": [
       {
@@ -402,7 +402,7 @@
     ]
   },
   {
-    "name": "JET",
+    "name": "J.E.T.",
     "image_name": "JET.webp",
     "options": [
       {
@@ -425,7 +425,7 @@
     ]
   },
   {
-    "name": "obj 헤비버든",
+    "name": "O.B.J. 헤비 버든",
     "image_name": "obj_헤비버든.webp",
     "signature_weapon": "카치르.webp",
     "options": [
@@ -506,7 +506,7 @@
     ]
   },
   {
-    "name": "obj 아츠 아이덴티티",
+    "name": "O.B.J. 아츠 아이덴티티",
     "image_name": "obj_아츠_아이덴티티.webp",
     "signature_weapon": "안탈.webp",
     "options": [
