@@ -608,4 +608,51 @@
       }
     ]
   }
+  ,
+  {
+    "name": "적영",
+    "image_name": "적영.webp",
+    "signature_weapon": "미브.webp",
+    "options": [
+      {
+        "basic": "힘",
+        "additional": "공격력 증가",
+        "skill": "기예"
+      }
+    ]
+  },
+  {
+    "name": "붉게 물든 가호",
+    "image_name": "붉게_물든_가호.webp",
+    "signature_weapon": "카뮤.webp",
+    "options": [
+      {
+        "basic": "민첩",
+        "additional": "열기 피해 증가",
+        "skill": "흐름"
+      }
+    ]
+  },
+  {
+    "name": "환상통",
+    "image_name": "환상통.webp",
+    "options": [
+      {
+        "basic": "힘",
+        "additional": "오리지늄 아츠 증가",
+        "skill": "억제"
+      }
+    ]
+  },
+  {
+    "name": "등불의 사명",
+    "image_name": "등불의_사명.webp",
+    "options": [
+      {
+        "basic": "민첩",
+        "additional": "궁극기 충전 효율 증가",
+        "skill": "효율"
+      }
+    ]
+  }
 ]
