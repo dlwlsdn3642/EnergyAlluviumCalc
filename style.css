@@ -428,6 +428,14 @@ body.show-signature-weapon .weapon-card-character-icon {
     margin-bottom: 8px;
 }
 
+.grouped-plan-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 8px;
+    color: #dcdcdc;
+}
+
 .matched-options .grouped-plan-options {
     margin-top: 8px;
     padding-left: 16px;
