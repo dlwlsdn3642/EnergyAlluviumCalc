@@ -28,7 +28,7 @@
     "options": [
       {
         "basic": "힘",
-        "additional": "오리지늄 아츠 증가",
+        "additional": "오리지늄 아츠 강도 증가",
         "skill": "잔혹"
       }
     ]
@@ -165,7 +165,7 @@
     "options": [
       {
         "basic": "주요 능력치 증가",
-        "additional": "오리지늄 아츠 증가",
+        "additional": "오리지늄 아츠 강도 증가",
         "skill": "고통"
       }
     ]
@@ -350,7 +350,7 @@
     "options": [
       {
         "basic": "주요 능력치 증가",
-        "additional": "오리지늄 아츠 증가",
+        "additional": "오리지늄 아츠 강도 증가",
         "skill": "방출"
       }
     ]
@@ -512,7 +512,7 @@
     "options": [
       {
         "basic": "지능",
-        "additional": "오리지늄 아츠 증가",
+        "additional": "오리지늄 아츠 강도 증가",
         "skill": "추격"
       }
     ]
@@ -639,7 +639,7 @@
     "options": [
       {
         "basic": "힘",
-        "additional": "오리지늄 아츠 증가",
+        "additional": "오리지늄 아츠 강도 증가",
         "skill": "억제"
       }
     ]
