@@ -5,7 +5,10 @@ const COOKIES = {
   FOUR_STAR: "include_4star_options",
   UNOWNED_ONLY: "show_unowned_only",
   SHOW_SIGNATURE: "show_signature_weapon",
+  WEAPON_SORT: "weapon_sort_order",
 };
+
+const VALID_WEAPON_SORTS = new Set(["latest", "star", "name"]);
 
 const setCookie = (name, value) => {
   const expires = new Date(Date.now() + 365 * 86400000).toUTCString();
@@ -40,6 +43,13 @@ export const loadShowSignature = () =>
 export const saveShowSignature = (v) =>
   setCookie(COOKIES.SHOW_SIGNATURE, v ? "1" : "0");
 
+export const loadWeaponSort = () => {
+  const sort = getCookie(COOKIES.WEAPON_SORT);
+  return VALID_WEAPON_SORTS.has(sort) ? sort : "latest";
+};
+export const saveWeaponSort = (v) =>
+  setCookie(COOKIES.WEAPON_SORT, VALID_WEAPON_SORTS.has(v) ? v : "latest");
+
 export function loadExcludedWeapons() {
   try {
     const parsed = JSON.parse(getCookie(COOKIES.WEAPON_FILTER));
@@ -62,9 +72,15 @@ export async function loadGameData(includeFourStar) {
     const [dungeonData, baseWeapons, weapons4Star = []] = await Promise.all(
       responses.map((r) => r.json()),
     );
+    const withSortMeta = (weapons, sourceRank) =>
+      weapons.map((weapon, sourceIndex) => ({
+        ...weapon,
+        __sourceRank: sourceRank,
+        __sourceIndex: sourceIndex,
+      }));
     const mergedWeapons = includeFourStar
-      ? baseWeapons.concat(weapons4Star)
-      : baseWeapons;
+      ? withSortMeta(baseWeapons, 0).concat(withSortMeta(weapons4Star, 1))
+      : withSortMeta(baseWeapons, 0);
 
     const commonBasics =
       dungeonData.find((entry) => entry.id === 0)?.basic || [];
@@ -92,6 +108,9 @@ function processWeapons(weapons) {
     weaponMetaByName[name] = {
       imageName: String(weapon?.image_name || "").trim(),
       signatureImageName: String(weapon?.signature_weapon || "").trim(),
+      star: Number(weapon?.star) || 0,
+      sourceRank: Number(weapon?.__sourceRank) || 0,
+      sourceIndex: Number(weapon?.__sourceIndex) || 0,
       options: options.map((opt) => ({
         ...opt,
         text: `${opt.basic} / ${opt.additional} / ${opt.skill}`,

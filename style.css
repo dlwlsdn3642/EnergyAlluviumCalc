@@ -64,6 +64,7 @@ body {
 #fourstar-toggle-btn,
 #unowned-filter-btn,
 #signature-weapon-toggle-btn,
+#weapon-sort-select,
 #collection-export-btn,
 #collection-import-btn {
     border: 1px solid #5a5a5a;
@@ -77,9 +78,14 @@ body {
 #fourstar-toggle-btn:hover,
 #unowned-filter-btn:hover,
 #signature-weapon-toggle-btn:hover,
+#weapon-sort-select:hover,
 #collection-export-btn:hover,
 #collection-import-btn:hover {
     background: #323232;
+}
+
+#weapon-sort-select {
+    min-height: 31px;
 }
 
 #fourstar-toggle-btn.is-active {

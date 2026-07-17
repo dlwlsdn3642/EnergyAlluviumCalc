@@ -3,10 +3,12 @@ import {
   loadIncludeFourStar,
   loadShowUnownedOnly,
   loadShowSignature,
+  loadWeaponSort,
   loadExcludedWeapons,
   saveIncludeFourStar,
   saveShowUnownedOnly,
   saveShowSignature,
+  saveWeaponSort,
   saveExcludedWeapons,
 } from "./data.js";
 import {
@@ -26,6 +28,7 @@ const state = {
   fourStar: loadIncludeFourStar(),
   unownedOnly: loadShowUnownedOnly(),
   showSignature: loadShowSignature(),
+  weaponSort: loadWeaponSort(),
 };
 
 const DOM = {};
@@ -38,6 +41,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     "collection-import-btn",
     "collection-import-input",
     "result-content",
+    "weapon-sort-select",
     "weapon-list",
   ].forEach((id) => (DOM[id] = document.getElementById(id)));
 
@@ -71,6 +75,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
   );
   document.body.classList.toggle("show-signature-weapon", state.showSignature);
+  DOM["weapon-sort-select"].value = state.weaponSort;
+  DOM["weapon-sort-select"].addEventListener("change", () => {
+    state.weaponSort = DOM["weapon-sort-select"].value;
+    saveWeaponSort(state.weaponSort);
+    renderWeaponFilter();
+  });
 
   DOM["calculate-btn"].addEventListener("click", () =>
     runCalculation(Math.max(...state.data.dungeonData.map((d) => d.id))),
@@ -340,7 +350,7 @@ function renderWeaponFilter() {
   const { optionData, weaponMetaByName } = state.data;
   const allWeapons = [...new Set(optionData.flatMap((r) => r.weapons))]
     .filter(Boolean)
-    .sort((a, b) => a.localeCompare(b, "ko"));
+    .sort((a, b) => compareWeapons(a, b, weaponMetaByName));
 
   if (!allWeapons.length) {
     DOM["weapon-list"].textContent = "표시할 무기 목록이 없습니다.";
@@ -361,6 +371,34 @@ function renderWeaponFilter() {
 
   syncSelections();
 }
+
+function compareWeapons(a, b, weaponMetaByName) {
+  const aMeta = weaponMetaByName[a] || {};
+  const bMeta = weaponMetaByName[b] || {};
+
+  if (state.weaponSort === "name") return compareWeaponNames(a, b);
+
+  if (state.weaponSort === "star") {
+    return (
+      (aMeta.sourceRank ?? 0) - (bMeta.sourceRank ?? 0) ||
+      (bMeta.star ?? 0) - (aMeta.star ?? 0) ||
+      compareLatestWithinSource(aMeta, bMeta) ||
+      compareWeaponNames(a, b)
+    );
+  }
+
+  return (
+    (aMeta.sourceRank ?? 0) - (bMeta.sourceRank ?? 0) ||
+    compareLatestWithinSource(aMeta, bMeta) ||
+    compareWeaponNames(a, b)
+  );
+}
+
+function compareLatestWithinSource(aMeta, bMeta) {
+  return (bMeta.sourceIndex ?? 0) - (aMeta.sourceIndex ?? 0);
+}
+
+const compareWeaponNames = (a, b) => a.localeCompare(b, "ko");
 
 function syncSelections() {
   const items = Array.from(DOM["weapon-list"].querySelectorAll(".weapon-item"));

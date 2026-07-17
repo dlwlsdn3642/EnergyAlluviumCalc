@@ -2,6 +2,7 @@
   {
     "name": "분쇄의 군주",
     "image_name": "분쇄의_군주.webp",
+    "star": 6,
     "options": [
       {
         "basic": "힘",
@@ -13,6 +14,7 @@
   {
     "name": "위대한 이름",
     "image_name": "위대한_이름.webp",
+    "star": 6,
     "options": [
       {
         "basic": "주요 능력치 증가",
@@ -24,6 +26,7 @@
   {
     "name": "고대의 강줄기",
     "image_name": "고대의_강줄기.webp",
+    "star": 5,
     "signature_weapon": "판.webp",
     "options": [
       {
@@ -36,6 +39,7 @@
   {
     "name": "키메라의 정의",
     "image_name": "키메라의_정의.webp",
+    "star": 5,
     "options": [
       {
         "basic": "힘",
@@ -47,6 +51,7 @@
   {
     "name": "장대한 염원",
     "image_name": "장대한_염원.webp",
+    "star": 6,
     "signature_weapon": "관리자.webp",
     "options": [
       {
@@ -59,6 +64,7 @@
   {
     "name": "십이문",
     "image_name": "십이문.webp",
+    "star": 5,
     "signature_weapon": "아크라이트.webp",
     "options": [
       {
@@ -71,6 +77,7 @@
   {
     "name": "작품: 중생",
     "image_name": "작품_중생.webp",
+    "star": 5,
     "options": [
       {
         "basic": "민첩",
@@ -82,6 +89,7 @@
   {
     "name": "O.B.J. 스파이크",
     "image_name": "obj_스파이크.webp",
+    "star": 5,
     "signature_weapon": "에스텔라.webp",
     "options": [
       {
@@ -94,6 +102,7 @@
   {
     "name": "바다와 별의 꿈",
     "image_name": "바다와_별의_꿈.webp",
+    "star": 6,
     "signature_weapon": "아델리아.webp",
     "options": [
       {
@@ -106,6 +115,7 @@
   {
     "name": "암흑의 횃불",
     "image_name": "암흑의_횃불.webp",
+    "star": 6,
     "options": [
       {
         "basic": "지능",
@@ -117,6 +127,7 @@
   {
     "name": "항로의 개척자",
     "image_name": "항로의_개척자.webp",
+    "star": 6,
     "options": [
       {
         "basic": "지능",
@@ -128,6 +139,7 @@
   {
     "name": "황무지의 방랑자",
     "image_name": "황무지의_방랑자.webp",
+    "star": 5,
     "signature_weapon": "펠리카.webp",
     "options": [
       {
@@ -140,6 +152,7 @@
   {
     "name": "쐐기",
     "image_name": "쐐기.webp",
+    "star": 6,
     "options": [
       {
         "basic": "주요 능력치 증가",
@@ -151,6 +164,7 @@
   {
     "name": "클래니벌",
     "image_name": "클래니벌.webp",
+    "star": 6,
     "options": [
       {
         "basic": "주요 능력치 증가",
@@ -162,6 +176,7 @@
   {
     "name": "백야의 별",
     "image_name": "백야의_별.webp",
+    "star": 6,
     "options": [
       {
         "basic": "주요 능력치 증가",
@@ -173,6 +188,7 @@
   {
     "name": "O.B.J. 엣지 오브 라이트",
     "image_name": "obj_엣지_오브_라이트.webp",
+    "star": 5,
     "signature_weapon": "아케쿠리.webp",
     "options": [
       {
@@ -185,6 +201,7 @@
   {
     "name": "끝없는 방랑",
     "image_name": "끝없는_방랑.webp",
+    "star": 6,
     "signature_weapon": "포그라니치니크.webp",
     "options": [
       {
@@ -197,6 +214,7 @@
   {
     "name": "테르밋 커터",
     "image_name": "테르밋_커터.webp",
+    "star": 6,
     "options": [
       {
         "basic": "의지",
@@ -208,6 +226,7 @@
   {
     "name": "숭배의 시선",
     "image_name": "숭배의_시선.webp",
+    "star": 5,
     "signature_weapon": "진천우.webp",
     "options": [
       {
@@ -220,6 +239,7 @@
   {
     "name": "용조의 불꽃",
     "image_name": "용조의_불꽃.webp",
+    "star": 6,
     "signature_weapon": "레바테인.webp",
     "options": [
       {
@@ -232,6 +252,7 @@
   {
     "name": "망자의 노래",
     "image_name": "망자의_노래.webp",
+    "star": 5,
     "options": [
       {
         "basic": "지능",
@@ -243,6 +264,7 @@
   {
     "name": "망각",
     "image_name": "망각.webp",
+    "star": 6,
     "options": [
       {
         "basic": "지능",
@@ -254,6 +276,7 @@
   {
     "name": "부요",
     "image_name": "부요.webp",
+    "star": 6,
     "options": [
       {
         "basic": "주요 능력치 증가",
@@ -265,6 +288,7 @@
   {
     "name": "천둥의 흔적",
     "image_name": "천둥의_흔적.webp",
+    "star": 6,
     "signature_weapon": "엠버.webp",
     "options": [
       {
@@ -277,6 +301,7 @@
   {
     "name": "최후의 메아리",
     "image_name": "최후의_메아리.webp",
+    "star": 5,
     "signature_weapon": "스노우샤인.webp",
     "options": [
       {
@@ -289,6 +314,7 @@
   {
     "name": "기사도 정신",
     "image_name": "기사도_정신.webp",
+    "star": 6,
     "options": [
       {
         "basic": "의지",
@@ -300,6 +326,7 @@
   {
     "name": "선교의 자유",
     "image_name": "선교의_자유.webp",
+    "star": 5,
     "signature_weapon": "자이히.webp",
     "options": [
       {
@@ -312,6 +339,7 @@
   {
     "name": "O.B.J. 벨로시투스",
     "image_name": "obj벨로시투스.webp",
+    "star": 5,
     "signature_weapon": "플루라이트.webp",
     "options": [
       {
@@ -324,6 +352,7 @@
   {
     "name": "헤라펜거",
     "image_name": "헤라펜거.webp",
+    "star": 6,
     "signature_weapon": "라스트_라이트.webp",
     "options": [
       {
@@ -336,6 +365,7 @@
   {
     "name": "검은 추적자",
     "image_name": "검은_추적자.webp",
+    "star": 5,
     "options": [
       {
         "basic": "힘",
@@ -347,6 +377,7 @@
   {
     "name": "폭발 유닛",
     "image_name": "폭발_유닛.webp",
+    "star": 6,
     "options": [
       {
         "basic": "주요 능력치 증가",
@@ -358,6 +389,7 @@
   {
     "name": "린수를 찾아서 3.0",
     "image_name": "린수를_찾아서.webp",
+    "star": 5,
     "signature_weapon": "알레쉬.webp",
     "options": [
       {
@@ -370,6 +402,7 @@
   {
     "name": "작품: 침식 흔적",
     "image_name": "작품_침식_흔적.webp",
+    "star": 6,
     "options": [
       {
         "basic": "의지",
@@ -381,6 +414,7 @@
   {
     "name": "중심력",
     "image_name": "중심력.webp",
+    "star": 5,
     "signature_weapon": "아비웨나.webp",
     "options": [
       {
@@ -393,6 +427,7 @@
   {
     "name": "모범",
     "image_name": "모범.webp",
+    "star": 6,
     "options": [
       {
         "basic": "주요 능력치 증가",
@@ -404,6 +439,7 @@
   {
     "name": "J.E.T.",
     "image_name": "JET.webp",
+    "star": 6,
     "options": [
       {
         "basic": "주요 능력치 증가",
@@ -415,6 +451,7 @@
   {
     "name": "산의 지배자",
     "image_name": "산의_지배자.webp",
+    "star": 6,
     "signature_weapon": "여풍.webp",
     "options": [
       {
@@ -427,6 +464,7 @@
   {
     "name": "O.B.J. 헤비 버든",
     "image_name": "obj_헤비버든.webp",
+    "star": 5,
     "signature_weapon": "카치르.webp",
     "options": [
       {
@@ -439,6 +477,7 @@
   {
     "name": "과거의 일품",
     "image_name": "과거의_일품.webp",
+    "star": 6,
     "options": [
       {
         "basic": "의지",
@@ -450,6 +489,7 @@
   {
     "name": "용사",
     "image_name": "용사.webp",
+    "star": 6,
     "options": [
       {
         "basic": "민첩",
@@ -461,6 +501,7 @@
   {
     "name": "강철의 여운",
     "image_name": "강철의_여운.webp",
+    "star": 5,
     "options": [
       {
         "basic": "민첩",
@@ -472,6 +513,7 @@
   {
     "name": "예술의 폭군",
     "image_name": "예술의_폭군.webp",
+    "star": 6,
     "signature_weapon": "이본.webp",
     "options": [
       {
@@ -484,6 +526,7 @@
   {
     "name": "이성적인 작별",
     "image_name": "이성적인_작별.webp",
+    "star": 5,
     "signature_weapon": "울프가드.webp",
     "options": [
       {
@@ -496,6 +539,7 @@
   {
     "name": "사명의 길",
     "image_name": "사명의_길.webp",
+    "star": 6,
     "signature_weapon": "질베르타.webp",
     "options": [
       {
@@ -508,6 +552,7 @@
   {
     "name": "O.B.J. 아츠 아이덴티티",
     "image_name": "obj_아츠_아이덴티티.webp",
+    "star": 5,
     "signature_weapon": "안탈.webp",
     "options": [
       {
@@ -520,6 +565,7 @@
   {
     "name": "무가내하",
     "image_name": "무가내하.webp",
+    "star": 5,
     "options": [
       {
         "basic": "의지",
@@ -531,6 +577,7 @@
   {
     "name": "불사의 성주",
     "image_name": "불사의_성주.webp",
+    "star": 5,
     "options": [
       {
         "basic": "지능",
@@ -542,6 +589,7 @@
   {
     "name": "반항",
     "image_name": "반항.webp",
+    "star": 6,
     "signature_weapon": "탕탕.webp",
     "options": [
       {
@@ -554,6 +602,7 @@
   {
     "name": "찬란했던 기억",
     "image_name": "찬란했던_기억.webp",
+    "star": 6,
     "options": [
       {
         "basic": "민첩",
@@ -565,6 +614,7 @@
   {
     "name": "향수",
     "image_name": "향수.webp",
+    "star": 6,
     "options": [
       {
         "basic": "민첩",
@@ -576,6 +626,7 @@
   {
     "name": "늑대의 혈흔",
     "image_name": "늑대의_혈흔.webp",
+    "star": 6,
     "signature_weapon": "로시.webp",
     "options": [
       {
@@ -588,6 +639,7 @@
   {
     "name": "고독한 나룻배",
     "image_name": "고독한_나룻배.webp",
+    "star": 6,
     "signature_weapon": "장방이.webp",
     "options": [
       {
@@ -600,6 +652,7 @@
   {
     "name": "안개 속 불빛",
     "image_name": "안개_속_불빛.webp",
+    "star": 6,
     "options": [
       {
         "basic": "의지",
@@ -612,6 +665,7 @@
   {
     "name": "적영",
     "image_name": "적영.webp",
+    "star": 6,
     "signature_weapon": "미브.webp",
     "options": [
       {
@@ -624,6 +678,7 @@
   {
     "name": "붉게 물든 가호",
     "image_name": "붉게_물든_가호.webp",
+    "star": 6,
     "signature_weapon": "카뮤.webp",
     "options": [
       {
@@ -636,6 +691,7 @@
   {
     "name": "환상통",
     "image_name": "환상통.webp",
+    "star": 6,
     "options": [
       {
         "basic": "힘",
@@ -647,6 +703,7 @@
   {
     "name": "등불의 사명",
     "image_name": "등불의_사명.webp",
+    "star": 6,
     "options": [
       {
         "basic": "민첩",
@@ -658,6 +715,7 @@
   {
     "name": "조망",
     "image_name": "조망.webp",
+    "star": 6,
     "options": [
       {
         "basic": "주요 능력치 증가",
@@ -669,6 +727,7 @@
   {
     "name": "42식·척결",
     "image_name": "42식·척결.webp",
+    "star": 6,
     "signature_weapon": "결.webp",
     "options": [
       {
@@ -681,6 +740,7 @@
   {
     "name": "찬란한 밤의 데뷔",
     "image_name": "찬란한 밤의 데뷔.webp",
+    "star": 6,
     "signature_weapon": "리노.webp",
     "options": [
       {
@@ -693,6 +753,7 @@
   {
     "name": "공명점",
     "image_name": "공명점.webp",
+    "star": 6,
     "options": [
       {
         "basic": "지능",
@@ -704,6 +765,7 @@
   {
     "name": "전성기",
     "image_name": "전성기.webp",
+    "star": 6,
     "options": [
       {
         "basic": "의지",
