@@ -739,7 +739,7 @@
   },
   {
     "name": "찬란한 밤의 데뷔",
-    "image_name": "찬란한 밤의 데뷔.webp",
+    "image_name": "찬란한_밤의_데뷔.webp",
     "star": 6,
     "signature_weapon": "리노.webp",
     "options": [
@@ -771,6 +771,43 @@
         "basic": "의지",
         "additional": "치유 효율 증가",
         "skill": "추격"
+      }
+    ]
+  },
+  {
+    "name": "추운 밤의 그림자",
+    "image_name": "추운_밤의_그림자.webp",
+    "star": 6,
+    "signature_weapon": "티프로스.webp",
+    "options": [
+      {
+        "basic": "민첩",
+        "additional": "공격력 증가",
+        "skill": "방출"
+      }
+    ]
+  },
+  {
+    "name": "고난의 끝",
+    "image_name": "고난의_끝.webp",
+    "star": 6,
+    "options": [
+      {
+        "basic": "민첩",
+        "additional": "자연 피해 증가",
+        "skill": "방출"
+      }
+    ]
+  },
+  {
+    "name": "간식 시간",
+    "image_name": "간식_시간.webp",
+    "star": 6,
+    "options": [
+      {
+        "basic": "힘",
+        "additional": "치유 효율 증가",
+        "skill": "의료"
       }
     ]
   }
