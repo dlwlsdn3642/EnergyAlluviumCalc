@@ -95,6 +95,7 @@ function createSearchScope({
   selected,
   dungeonData,
   commonBasics,
+  minDungeonId,
   maxDungeonId,
 }) {
   const selectedBasic = selected?.basic
@@ -102,7 +103,9 @@ function createSearchScope({
     : null;
 
   return {
-    dungeons: dungeonData.filter((d) => d.id >= 1 && d.id <= maxDungeonId),
+    dungeons: dungeonData.filter(
+      (d) => d.id >= minDungeonId && d.id <= maxDungeonId,
+    ),
     basicCombinations: createCombinations(commonBasics, selectedBasic),
     selectedAdditional: selected?.additional || null,
     selectedSkill: selected?.skill || null,
@@ -183,12 +186,14 @@ export function findPlans({
   dungeonData,
   optionData,
   commonBasics,
+  minDungeonId = 1,
   maxDungeonId = 5,
 }) {
   const scope = createSearchScope({
     selected,
     dungeonData,
     commonBasics,
+    minDungeonId,
     maxDungeonId,
   });
 

@@ -82,8 +82,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderWeaponFilter();
   });
 
+  // "무릉" 버튼은 id 5 이후 던전 그룹만 대상으로 계산한다.
   DOM["calculate-btn"].addEventListener("click", () =>
-    runCalculation(Math.max(...state.data.dungeonData.map((d) => d.id))),
+    runCalculation(
+      Math.max(...state.data.dungeonData.map((d) => d.id)),
+      5,
+    ),
   );
   // "4번 협곡" 버튼은 id 1~4 던전 그룹만 대상으로 계산한다.
   DOM["calculate-canyon-btn"].addEventListener("click", () =>
@@ -193,7 +197,7 @@ async function importCollectionJson(event) {
   }
 }
 
-async function runCalculation(maxDungeonId) {
+async function runCalculation(maxDungeonId, minDungeonId = 1) {
   if (!state.isLoaded && !(await refreshData())) {
     renderLoadFailure();
     return;
@@ -218,6 +222,7 @@ async function runCalculation(maxDungeonId) {
     dungeonData,
     optionData: filteredOptions,
     commonBasics,
+    minDungeonId,
     maxDungeonId,
   };
 
