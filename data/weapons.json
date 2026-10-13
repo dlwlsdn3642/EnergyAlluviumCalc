@@ -837,5 +837,29 @@
         "skill": "고통"
       }
     ]
+  },
+  {
+    "name": "유구한 전승",
+    "image_name": "유구한_전승.webp",
+    "star": 6,
+    "options": [
+      {
+        "basic": "지능",
+        "additional": "냉기 피해 증가",
+        "skill": "효율"
+      }
+    ]
+  },
+  {
+    "name": "응집 공업",
+    "image_name": "응집_공업.webp",
+    "star": 6,
+    "options": [
+      {
+        "basic": "의지",
+        "additional": "전기 피해 증가",
+        "skill": "방출"
+      }
+    ]
   }
 ]
