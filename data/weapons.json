@@ -861,5 +861,31 @@
         "skill": "방출"
       }
     ]
+  },
+  {
+    "name": "달콤한 거래",
+    "image_name": "달콤한_거래.webp",
+    "star": 6,
+    "signature_weapon": "케르.webp",
+    "options": [
+      {
+        "basic": "힘",
+        "additional": "자연 피해 증가",
+        "skill": "흐름"
+      }
+    ]
+  },
+  {
+    "name": "떠오르는 별",
+    "image_name": "떠오르는_별.webp",
+    "star": 6,
+    "signature_weapon": "미미노.webp",
+    "options": [
+      {
+        "basic": "힘",
+        "additional": "궁극기 충전 효율 증가",
+        "skill": "강공"
+      }
+    ]
   }
 ]
