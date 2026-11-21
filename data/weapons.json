@@ -841,7 +841,7 @@
   {
     "name": "유구한 전승",
     "image_name": "유구한_전승.webp",
-    "star": 6,
+    "star": 5,
     "options": [
       {
         "basic": "지능",
@@ -853,7 +853,7 @@
   {
     "name": "응집 공업",
     "image_name": "응집_공업.webp",
-    "star": 6,
+    "star": 5,
     "options": [
       {
         "basic": "의지",
