@@ -878,13 +878,25 @@
   {
     "name": "떠오르는 별",
     "image_name": "떠오르는_별.webp",
-    "star": 6,
+    "star": 5,
     "signature_weapon": "미미노.webp",
     "options": [
       {
         "basic": "힘",
         "additional": "궁극기 충전 효율 증가",
         "skill": "강공"
+      }
+    ]
+  },
+  {
+    "name": "유성 돌격",
+    "image_name": "유성_돌격.webp",
+    "star": 6,
+    "options": [
+      {
+        "basic": "민첩",
+        "additional": "공격력 증가",
+        "skill": "방출"
       }
     ]
   }
